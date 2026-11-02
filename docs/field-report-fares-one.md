@@ -22,8 +22,17 @@ Session fares-one, on the machine agent-machine-dan, permission mode auto (read 
    - Tel Aviv: El Al LY92 from Narita, 2 days (Tuesday, Sunday). This matches the twice-weekly service in the route notes.
    - Barcelona: none found.
    - No nonstop on any route showed up in a first class search.
-3. **Scheduling.** `bin/daily-loop` is in the repository. Mechanism found on the machine: the `skill-mirror` tmux window, started by `/usr/local/bin/start.sh` lines 200–207 (a loop that runs, sleeps 86,400 seconds and appends to a log; window 2 `skill-mirror` shows in `tmux list-windows -t main`). That matches FACTS.md, section "Skill mirror". The installation step left for a separately authorized session on `isleofdan/agent-machine`: make a permanent clone at `/data/home/dan/fares` with its virtualenv, and add the four start.sh lines given in `PLAN.md` under "Daily run". The proposed run time is at boot and then every 24 hours after. Log: `/data/home/dan/fares-data/loop.log`.
+3. **Scheduling.** `bin/daily-loop` is in the repository. Mechanism found on the machine: the `skill-mirror` tmux window, started by `/usr/local/bin/start.sh` lines 200–207 (a loop that runs, sleeps 86,400 seconds and appends to a log; window 2 `skill-mirror` shows in `tmux list-windows -t main`). That matches FACTS.md, section "Skill mirror". The installation step left for a separately authorized session on `isleofdan/agent-machine`: make a permanent clone at `/data/home/dan/fares` with its virtualenv (`python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`). Then add this command to `/usr/local/bin/start.sh` (in the agent-machine repository) after the skill-mirror window, line 207, with its two comment lines as given in `PLAN.md`:
+   ```sh
+   "${AS_DAN[@]}" tmux new-window -d -t main -n fares "$HOME_DIR/fares/bin/daily-loop" \
+     || echo "start.sh: starting the fares window failed; continuing." >&2
+   ```
+   The proposed run time is at boot and then every 24 hours after. Log: `/data/home/dan/fares-data/loop.log`.
 4. **The page renders.** Screenshot `docs/fares-page.png` (taken with Playwright 1.56.1's headless Chromium) shows all four route sections: Houston, Detroit, Tel Aviv and Barcelona, nonstops first, then the cheapest one-stop, each line marked "first capture".
+
+   ![The fares page, all four route sections](https://raw.githubusercontent.com/isleofdan/fares/claude/fares-one/docs/fares-page.png)
+
+   Link: https://github.com/isleofdan/fares/blob/claude/fares-one/docs/fares-page.png
 5. **The three files exist.** `README.md`, `PLAN.md` (current state, decisions, sources tried, sweeps, daily run, page, close-out note) and `LEARNING.md` (note 1: fare buckets, what Google Flights shows and does not show, and the first capture route by route).
 
 ## Divergences
@@ -49,11 +58,12 @@ Session fares-one, on the machine agent-machine-dan, permission mode auto (read 
    - the page shows only a week scan from the same day.
 5. Team check, round 2: `qitem-20261102161959-a8ec033d` → verdict `qitem-20261102162101-a22ce4e6`, PASS on `7c3d197`.
 6. Result check, round 1: job `20261102-172721-c24407`, FINDINGS on report event 2378: (1) no "What the brief got wrong" section, so I added one; (2) the first paragraph did not say that nothing changes on Dan's screen, so I added that sentence.
-7. Result check on this version: its verdict is named in the closing message.
+7. Result check, round 2: job `20261102-172856-a45adc`, FINDINGS on report event 2380: (1) the report referred to PLAN.md instead of giving the exact start.sh command, so I quoted the command under Verify 3; (2) the screenshot was named but not attached, so I embedded it with a GitHub link under Verify 4.
+8. Result check on this version: its verdict is named in the closing message.
 
 ## What the next session needs
 
-- **Install the daily run.** Owner: a separately authorized Claude Code session on `isleofdan/agent-machine`. It makes the permanent clone at `/data/home/dan/fares` with its `.venv`, and adds the start.sh lines from `PLAN.md` ("Daily run"). A merge to that repository's `main` deploys and restarts the machine.
+- **Install the daily run.** Owner: a separately authorized Claude Code session on `isleofdan/agent-machine`. It makes the permanent clone at `/data/home/dan/fares` with its `.venv`, and adds the start.sh command quoted under Verify 3. A merge to that repository's `main` deploys and restarts the machine.
 - **Next fares session.** Owner: Claude Code on the machine with the OpenRig team, once history has built up. It puts the page into the Spine (a Wall card and desk for each trip), then works on tactics, brokers and the reading feed.
 
 ## Asks
