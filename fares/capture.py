@@ -61,7 +61,7 @@ def run(every_days: int, limit: int | None, search=gflights.search, week_scan: b
     conn = store.connect(config.store_path())
     started = time.monotonic()
     sweep_id = store.start_sweep(conn, now_utc(), gflights.SOURCE, every_days)
-    counts, queries, failed, blocked_run, throttled = {}, 0, 0, 0, False
+    counts, queries, failed, blocked_run, throttled, finished_loop = {}, 0, 0, 0, False, False
     try:
         for route in profiles["routes"]:
             dest = route["airports"][0]
@@ -104,18 +104,22 @@ def run(every_days: int, limit: int | None, search=gflights.search, week_scan: b
                         for it in answer.itineraries
                     ]
                     counts[key] += store.insert_fares(conn, rows)
+        finished_loop = True
     finally:
         minutes = (time.monotonic() - started) / 60
         total = sum(counts.values())
         per = " ".join(f"{k}={v}" for k, v in counts.items())
         kind = "week scan" if week_scan else "sweep"
-        note = f"{kind}: {len(trips)} trips every {every_days} days; {minutes:.1f} min"
-        store.finish_sweep(conn, sweep_id, now_utc(), queries, failed, total, throttled, note)
-        log(f"{kind} {sweep_id} done: rows={total} queries={queries} failed={failed} "
+        # Complete only if every planned search ran: not throttled, not interrupted or crashed.
+        completed = finished_loop and not throttled
+        state = "done" if completed else "INCOMPLETE"
+        note = f"{kind}: {len(trips)} trips every {every_days} days; {minutes:.1f} min; {state}"
+        store.finish_sweep(conn, sweep_id, now_utc(), queries, failed, total, throttled, note, completed)
+        log(f"{kind} {sweep_id} {state}: rows={total} queries={queries} failed={failed} "
             f"throttled={int(throttled)} minutes={minutes:.1f} every={every_days}d {per}")
         conn.close()
     return {"sweep_id": sweep_id, "counts": counts, "queries": queries, "failed": failed,
-            "throttled": throttled, "minutes": minutes}
+            "throttled": throttled, "minutes": minutes, "completed": completed}
 
 
 def main(argv=None) -> int:
@@ -128,7 +132,7 @@ def main(argv=None) -> int:
                    help="business only, 7 consecutive departure days 4 weeks out (shows nonstop days of week)")
     args = p.parse_args(argv)
     result = run(args.every, args.limit, week_scan=args.week_scan)
-    return 1 if result["throttled"] or result["queries"] == result["failed"] else 0
+    return 0 if result["completed"] and result["queries"] > result["failed"] else 1
 
 
 if __name__ == "__main__":

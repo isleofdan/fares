@@ -60,6 +60,8 @@ Rows per route and cabin, sweep 2 (weekly) / sweep 4 (every 14 days):
 
 **Far-off dates come back empty.** In both sweeps, Houston, Detroit and Tel Aviv returned no itineraries for departures from mid/late June 2027 onward (Tel Aviv from 15 June, the others from 29 June). Barcelona answered through August. This is the same in the refusal-free sweep, so it is not throttling; most likely those fares are not on sale yet. So for three routes the useful horizon today is about 8 months, not 300 days.
 
+**Complete or not.** A sweep is marked `completed` only when every planned search ran and the source did not throttle it. Interrupted, crashed and throttled sweeps keep their rows as history, are logged as INCOMPLETE, and are never shown on the page as today's prices. A page with no results block (a bot check, a cookie-consent page, changed markup) counts as a refused search, never as "no flights". A genuine empty answer still carries the results block, with both lists empty. These rules came from dev-check's review of ba24f78. Existing sweeps were backfilled: 2–6 complete, 1 not.
+
 **Week scan** (`bin/capture --week-scan`). Business only, seven departures on consecutive days starting 4 weeks out. The main grid always lands on the same weekday, so this is what shows which days each nonstop flies.
 
 ## Daily run (step 7.4): prepared, not installed

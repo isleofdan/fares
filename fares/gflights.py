@@ -23,7 +23,7 @@ CABIN_NAMES = {1: "economy", 2: "premium economy", 3: "business", 4: "first"}
 
 
 class Blocked(Exception):
-    """The source answered with something other than results (rate limit, consent or bot page)."""
+    """The source answered with something other than results (rate limit, consent, bot or unknown page)."""
 
 
 @dataclass
@@ -114,9 +114,16 @@ def search(dest: str, cabin: str, depart: str, ret: str) -> Answer:
     res = _get_client().get(URL, params=build_params(dest, cabin, depart, ret))
     if res.status_code != 200:
         raise Blocked(f"HTTP {res.status_code}")
-    payload = extract_payload(res.text)
+    return answer_from_page(res.status_code, res.text)
+
+
+def answer_from_page(status: int, text: str) -> Answer:
+    """A real answer, even an empty one, carries the results block (its two lists are then null).
+    Any other page (bot check, cookie consent, changed markup) is a refusal, never "no flights"."""
+    payload = extract_payload(text)
     if payload is None:
-        if "unusual traffic" in res.text.lower() or "captcha" in res.text.lower():
+        lower = text.lower()
+        if "unusual traffic" in lower or "captcha" in lower:
             raise Blocked("bot check page")
-        return Answer(res.status_code, [])  # a real "no flights" answer
-    return Answer(res.status_code, parse_payload(payload))
+        raise Blocked("unrecognized page (no results block)")
+    return Answer(status, parse_payload(payload))

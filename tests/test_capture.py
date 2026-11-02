@@ -31,6 +31,24 @@ class ParseTest(unittest.TestCase):
         self.assertEqual(mixed["carrier_codes"], "TG,LY")
 
 
+class PageAnswerTest(unittest.TestCase):
+    def test_genuine_empty_answer_is_empty(self):
+        from fares.gflights import answer_from_page
+
+        html = ("<html><script class=\"ds:1\">AF_initDataCallback({key: 'ds:1', hash: '1', "
+                "data:[null,null,null,null], sideChannel: {}});</script></html>")
+        self.assertEqual(answer_from_page(200, html).itineraries, [])
+
+    def test_consent_or_unknown_page_is_a_refusal_not_no_flights(self):
+        from fares.gflights import Blocked, answer_from_page
+
+        consent = "<html><title>Before you continue to Google</title><p>Please accept cookies to continue.</p></html>"
+        with self.assertRaises(Blocked):
+            answer_from_page(200, consent)
+        with self.assertRaises(Blocked):
+            answer_from_page(200, "<html><p>Our systems have detected unusual traffic</p></html>")
+
+
 class GridTest(unittest.TestCase):
     def test_weekly_grid_stays_inside_300_days(self):
         from fares.capture import trip_grid
@@ -95,7 +113,28 @@ class CaptureTest(unittest.TestCase):
 
         result = capture.run(7, 5, search=refuse)
         self.assertTrue(result["throttled"])
+        self.assertFalse(result["completed"])
         self.assertEqual(result["queries"], 3)
+
+    def test_interrupted_sweep_is_kept_but_not_completed(self):
+        from fares import capture, config, gflights
+
+        capture.PAUSE_SECONDS = 0
+        rows = gflights.parse_payload(json.loads(FIXTURE.read_text()))
+        calls = []
+
+        def stop_on_second(*a):
+            calls.append(a)
+            if len(calls) == 2:
+                raise KeyboardInterrupt
+            return gflights.Answer(200, rows)
+
+        with self.assertRaises(KeyboardInterrupt):
+            capture.run(7, 2, search=stop_on_second)
+        conn = sqlite3.connect(config.store_path())
+        self.assertEqual(conn.execute("SELECT completed, rows_written FROM sweeps").fetchone(), (0, 12))
+        self.assertEqual(conn.execute("SELECT COUNT(*) FROM fares").fetchone()[0], 12)  # history kept
+        self.assertIn("INCOMPLETE", config.capture_log_path().read_text())
 
 
 if __name__ == "__main__":

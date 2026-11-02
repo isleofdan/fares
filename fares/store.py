@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS sweeps (
     failed_queries INTEGER,
     rows_written  INTEGER,
     throttled     INTEGER,            -- 1 if the source started refusing and the sweep stopped early
+    completed     INTEGER NOT NULL DEFAULT 0,  -- 1 only when every planned search ran and it was not throttled
     note          TEXT
 );
 
@@ -67,6 +68,12 @@ def connect(path: Path) -> sqlite3.Connection:
     for col in ("via", "segment_cabins"):
         if col not in cols:
             conn.execute(f"ALTER TABLE fares ADD COLUMN {col} TEXT")
+    sweep_cols = {r[1] for r in conn.execute("PRAGMA table_info(sweeps)")}
+    if "completed" not in sweep_cols:
+        # Sweeps before this column ran every planned search unless stopped by hand
+        # (sweep 1, which has no query count) or throttled.
+        conn.execute("ALTER TABLE sweeps ADD COLUMN completed INTEGER NOT NULL DEFAULT 0")
+        conn.execute("UPDATE sweeps SET completed = 1 WHERE queries IS NOT NULL AND throttled = 0")
     conn.commit()
     return conn
 
@@ -80,11 +87,11 @@ def start_sweep(conn, started_at: str, source: str, grid_step_days: int) -> int:
     return cur.lastrowid
 
 
-def finish_sweep(conn, sweep_id, finished_at, queries, failed, rows, throttled, note):
+def finish_sweep(conn, sweep_id, finished_at, queries, failed, rows, throttled, note, completed=False):
     conn.execute(
         "UPDATE sweeps SET finished_at=?, queries=?, failed_queries=?, rows_written=?,"
-        " throttled=?, note=? WHERE id=? AND finished_at IS NULL",
-        (finished_at, queries, failed, rows, int(throttled), note, sweep_id),
+        " throttled=?, note=?, completed=? WHERE id=? AND finished_at IS NULL",
+        (finished_at, queries, failed, rows, int(throttled), note, int(completed), sweep_id),
     )
     conn.commit()
 

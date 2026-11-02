@@ -31,14 +31,18 @@ def money(n: int) -> str:
 
 
 def latest_captures(conn):
-    """The newest complete full sweep and the newest week scan (sweeps with no query count were
-    stopped by hand and are left out)."""
+    """The newest completed full sweep, and the newest completed week scan from the same UTC day
+    (or None). Interrupted, crashed or throttled sweeps are never shown as today's prices, and an
+    older week scan is never mixed into a newer day."""
     full = conn.execute(
-        "SELECT * FROM sweeps WHERE finished_at IS NOT NULL AND queries IS NOT NULL"
-        " AND grid_step_days > 1 AND rows_written > 0 ORDER BY id DESC LIMIT 1").fetchone()
+        "SELECT * FROM sweeps WHERE completed = 1 AND grid_step_days > 1 AND rows_written > 0"
+        " ORDER BY id DESC LIMIT 1").fetchone()
+    if full is None:
+        return None, None
     scan = conn.execute(
-        "SELECT * FROM sweeps WHERE finished_at IS NOT NULL AND queries IS NOT NULL"
-        " AND grid_step_days = 1 AND rows_written > 0 ORDER BY id DESC LIMIT 1").fetchone()
+        "SELECT * FROM sweeps WHERE completed = 1 AND grid_step_days = 1 AND rows_written > 0"
+        " AND substr(started_at, 1, 10) = ? ORDER BY id DESC LIMIT 1",
+        (full["started_at"][:10],)).fetchone()
     return full, scan
 
 
@@ -54,7 +58,7 @@ def history(conn, route, cabin, kind, carrier, before_day):
     return conn.execute(
         f"SELECT substr(captured_at, 1, 10) AS day, MIN(price) AS low FROM fares"
         f" WHERE route = ? AND cabin = ? AND substr(captured_at, 1, 10) < ? AND {cond}"
-        f" AND sweep_id IN (SELECT id FROM sweeps WHERE queries IS NOT NULL)"
+        f" AND sweep_id IN (SELECT id FROM sweeps WHERE completed = 1)"
         f" GROUP BY day ORDER BY day", args).fetchall()
 
 
@@ -110,8 +114,8 @@ def route_section(conn, profile, full, scan):
     rows = conn.execute(q, (rid, full["id"])).fetchall() if full else []
     scan_rows = conn.execute(q, (rid, scan["id"])).fetchall() if scan else []
     today = rows + scan_rows
-    # History is everything captured on days before today's sweeps.
-    day = min(s["started_at"] for s in (full, scan) if s)[:10] if (full or scan) else "9999"
+    # History is everything captured on days before today's full sweep.
+    day = full["started_at"][:10] if full else "9999"
     days = nonstop_days(today)
     names = {r["carrier_codes"]: r["carriers"] for r in today if r["stops"] == 0}
     expected = profile.get("always_first") or {}
@@ -191,7 +195,8 @@ def route_section(conn, profile, full, scan):
     if hubs:
         reading.append(f"One-stop trips today connect through {len(hubs)} airports: {', '.join(hubs)}.")
     past_days = conn.execute("SELECT COUNT(DISTINCT substr(captured_at,1,10)) FROM fares WHERE route = ?"
-                             " AND substr(captured_at,1,10) < ?", (rid, day)).fetchone()[0]
+                             " AND substr(captured_at,1,10) < ?"
+                             " AND sweep_id IN (SELECT id FROM sweeps WHERE completed = 1)", (rid, day)).fetchone()[0]
     if not past_days:
         reading.append("This is the first day of history, so nothing here can be called a deal yet:"
                        " after a few weeks each price will be marked against this route's usual level.")
@@ -222,6 +227,11 @@ def render(conn) -> str:
     head = (f"<p class=intro>Latest full capture: {tokyo_time(full['finished_at'])}, {full['queries']} searches on "
             f"{html.escape(full['source'])}, {full['rows_written']} prices recorded. "
             if full else "<p class=intro>No complete capture yet. ")
+    if full and full["failed_queries"]:
+        head += (f"<b>{full['failed_queries']} of those searches were refused or failed</b>, so some departure dates"
+                 " are missing from today's prices. ")
+    if full and not scan:
+        head += "No week scan finished today, so nonstop weekdays come from the main searches only. "
     head += ("Every price is for one adult, round trip from Tokyo (Narita or Haneda), 7 nights, in US dollars, "
              "as the source showed it at the capture time; taxes included.</p>")
     glossary = """<details><summary>Words used on this page</summary><dl>
