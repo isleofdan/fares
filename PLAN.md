@@ -2,7 +2,7 @@
 
 ## Current state
 
-Step 7.1 (skeleton) done. Step 7.2 done: Google Flights chosen as the fare source (see "Fare sources tried"). Step 7.3 done: the capture runs; first real sweeps recorded under "First capture".
+Step 7.1 (skeleton) done. Step 7.2 done: Google Flights chosen as the fare source (see "Fare sources tried"). Step 7.3 done: the capture runs; first real sweeps recorded under "First capture". Step 7.4 done: daily loop written, not installed (see "Daily run").
 
 ## Decisions
 
@@ -60,6 +60,25 @@ Rows per route and cabin, sweep 2 (weekly) / sweep 4 (every 14 days):
 **Far-off dates come back empty.** In both sweeps, Houston, Detroit and Tel Aviv returned no itineraries for departures from mid/late June 2027 onward (Tel Aviv from 15 June, the others from 29 June). Barcelona answered through August. This is the same in the refusal-free sweep, so it is not throttling; most likely those fares are not on sale yet. So for three routes the useful horizon today is about 8 months, not 300 days.
 
 **Week scan** (`bin/capture --week-scan`). Business only, seven departures on consecutive days starting 4 weeks out. The main grid always lands on the same weekday, so this is what shows which days each nonstop flies.
+
+## Daily run (step 7.4): prepared, not installed
+
+**Mechanism found on the machine.** Per FACTS.md, section "Skill mirror": `start.sh` opens tmux window `skill-mirror` in session `main`. That window runs a loop: run `mirror-skills`, sleep 24 hours, repeat, appending output to a log. I checked it on the machine on 2 Nov 2026: `/usr/local/bin/start.sh` lines 200–207 hold that window, `tmux list-windows -t main` shows window 2 `skill-mirror` running, and `~/.agent-machine/skill-mirror/loop.log` was last written at 15:01:57Z that day.
+
+**The loop for fares.** `bin/daily-loop` has the same shape: run the capture now, then the week scan, then sleep out the rest of 24 hours, forever. A failed run does not end the loop. All output is appended to `/data/home/dan/fares-data/loop.log`. It sleeps 24 hours *minus the run's length* (the skill-mirror loop sleeps a full 24 hours after each run), so a ~10-minute capture does not push the run time later each day. Nothing here registers or starts it: installing it would be a change to the machine's own configuration, which is out of scope this session.
+
+**Proposed run time and log.** It runs when the machine boots and then at the same clock time every 24 hours until the next boot, like the skill mirror. One run takes about 10 minutes: the 14-day sweep (~8.5 min) plus the week scan (~1.5 min). Log: `/data/home/dan/fares-data/loop.log`, with each sweep's summary line also in `/data/home/dan/fares-data/capture.log`.
+
+**Installation step left for a separately authorized session on `isleofdan/agent-machine`.**
+1. Keep a permanent clone of `isleofdan/fares` at `/data/home/dan/fares` (outside `~/work`, whose job folders get cleared), with its virtualenv: `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`.
+2. Add these lines to `start.sh` after the skill-mirror window (after line 207):
+
+```sh
+# Window "fares": captures premium fares (isleofdan/fares) now and then once a day, forever; quiet.
+# Output goes to ~/fares-data/loop.log, each sweep's summary also to capture.log there. By hand: ~/fares/bin/daily-loop
+"${AS_DAN[@]}" tmux new-window -d -t main -n fares "$HOME_DIR/fares/bin/daily-loop" \
+  || echo "start.sh: starting the fares window failed; continuing." >&2
+```
 
 ## Close-out notes
 
