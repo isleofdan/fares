@@ -2,7 +2,7 @@
 
 ## Current state
 
-Step 7.1 (skeleton) done. Step 7.2 done: Google Flights chosen as the fare source (see "Fare sources tried"). Step 7.3 done: the capture runs; first real sweeps recorded under "First capture". Step 7.4 done: daily loop written, not installed (see "Daily run").
+Step 7.1 (skeleton) done. Step 7.2 done: Google Flights chosen as the fare source (see "Fare sources tried"). Step 7.3 done: the capture runs; first real sweeps recorded under "First capture". Step 7.4 done: daily loop written, not installed (see "Daily run"). Step 7.5 done: the page and its screenshot (see "The page").
 
 ## Decisions
 
@@ -30,6 +30,7 @@ What it does not give:
 - No fare code or booking class, so the `fare_code` column stays empty.
 - A round-trip search returns outbound flights, each with the cheapest round-trip price that includes it. The return flight is not chosen, so a row is "this outbound, round trip from $X".
 - Only the first page of results, typically 5–20 itineraries per search.
+- A "first" search returns the best cabin on each flight, so many results are first class only on the long flight (see "The page").
 
 Packages are listed in `requirements.txt` and installed into `.venv/` inside the clone. One dependency, `typing_extensions`, is used by fast-flights but not declared by it, so it is listed explicitly.
 
@@ -79,6 +80,17 @@ Rows per route and cabin, sweep 2 (weekly) / sweep 4 (every 14 days):
 "${AS_DAN[@]}" tmux new-window -d -t main -n fares "$HOME_DIR/fares/bin/daily-loop" \
   || echo "start.sh: starting the fares window failed; continuing." >&2
 ```
+
+## The page (step 7.5)
+
+`bin/page` (code in `fares/page.py`) writes one HTML file, `/data/home/dan/fares-data/fares.html`, from the newest complete sweep and the newest week scan. Nothing is hosted. `bin/daily-loop` now runs it after each capture. The page has one section per route, in the order of `routes.json`:
+- **Nonstop lines first**, one per nonstop carrier the data shows, with business and first. Tel Aviv's El Al line is always first and is shown even when no El Al nonstop was found, as the rules require. Each line also gives the weekdays that nonstop was seen departing, combining the main grid with the week scan.
+- **Then the cheapest one-stop** in business and in first.
+- Every price names its capture time (Tokyo time) and its source. Each is compared with the cheapest price of the same kind (that nonstop carrier, or one-stop) on each earlier capture day: how far above or below the typical (median) daily low, and the lowest price seen. Sweeps run earlier on the same day are not history, so with one day of data every line says "first capture".
+- A plain-words reading under each route, and a list of the words used, at the top of the page.
+- **Mixed cabins.** A first class search often returns trips that are first class only on the long flight and business on a connection: 321 of 497 first-search rows in sweep 5. The cabin of each flight is now stored (`segment_cabins`, added after sweep 4; earlier rows hold NULL) and the page names it, e.g. "mixed cabins: EY801 first, EY595 business".
+
+Screenshot: `docs/fares-page.png`, Playwright 1.56.1's headless Chromium, full page with all four route sections, from sweep 5 (16:04–16:12Z, 168 searches, 0 refused, 1,152 rows) and week scan 6 (245 rows), both on 2 Nov 2026 UTC. To take it again: `npm install`, then `npm run screenshot`.
 
 ## Close-out notes
 

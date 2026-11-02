@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS fares (
     flight_numbers TEXT NOT NULL,     -- outbound flights, e.g. "AZ793 AZ810"
     stops          INTEGER NOT NULL,  -- outbound stops (0 = nonstop)
     via            TEXT,              -- outbound connecting airports, e.g. "FCO" or "ICN ADD"
+    segment_cabins TEXT,              -- cabin of each outbound flight, e.g. "first,business"
     duration_min   INTEGER,           -- outbound total travel time
     price          INTEGER NOT NULL,  -- round-trip price, whole units of currency
     currency       TEXT NOT NULL,
@@ -51,7 +52,7 @@ BEGIN SELECT RAISE(ABORT, 'fares rows are never deleted'); END;
 
 FARE_COLUMNS = (
     "sweep_id", "captured_at", "route", "cabin", "origin_airport", "dest_airport",
-    "depart_date", "return_date", "carriers", "carrier_codes", "flight_numbers", "stops", "via",
+    "depart_date", "return_date", "carriers", "carrier_codes", "flight_numbers", "stops", "via", "segment_cabins",
     "duration_min", "price", "currency", "source", "fare_code", "result_list",
 )
 
@@ -61,10 +62,12 @@ def connect(path: Path) -> sqlite3.Connection:
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
+    # Columns added after the first sweeps of 2 Nov 2026; older rows hold NULL (not recorded).
     cols = {r[1] for r in conn.execute("PRAGMA table_info(fares)")}
-    if "via" not in cols:  # added after the first (stopped) sweep of 2 Nov 2026
-        conn.execute("ALTER TABLE fares ADD COLUMN via TEXT")
-        conn.commit()
+    for col in ("via", "segment_cabins"):
+        if col not in cols:
+            conn.execute(f"ALTER TABLE fares ADD COLUMN {col} TEXT")
+    conn.commit()
     return conn
 
 

@@ -17,6 +17,9 @@ SOURCE = "Google Flights"
 URL = "https://www.google.com/travel/flights"
 CURRENCY = "USD"
 ORIGIN = "TYO"  # Tokyo city code: Narita and Haneda
+# Cabin of each flight, as the page codes it. A "first" search can return itineraries that are
+# first class on the long flight and business on a connection.
+CABIN_NAMES = {1: "economy", 2: "premium economy", 3: "business", 4: "first"}
 
 
 class Blocked(Exception):
@@ -97,6 +100,7 @@ def parse_payload(payload) -> list[dict]:
                     "flight_numbers": " ".join(f"{s[22][0]}{s[22][1]}" for s in segments),
                     "stops": len(segments) - 1,
                     "via": " ".join(s[6] for s in segments[:-1]),
+                    "segment_cabins": ",".join(CABIN_NAMES.get(s[16], "unknown") for s in segments),
                     "duration_min": flight[9],
                     "price": int(price),
                     "result_list": list_name,

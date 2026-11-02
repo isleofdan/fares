@@ -1,7 +1,7 @@
 #!/bin/sh
 # Daily fares run, in the same shape as the machine's skill-mirror window (start.sh): run now,
 # then once every 24 hours, forever; a failed run does not end the loop. Each run is the full
-# capture sweep, then the week scan. All output is appended to
+# capture sweep, the week scan, then the page. All output is appended to
 # /data/home/dan/fares-data/loop.log. Quiet: nothing is sent anywhere.
 #
 # Prepared only: nothing registers or starts this. The line start.sh would need is in PLAN.md.
@@ -14,6 +14,7 @@ while true; do
   date -u '+%Y-%m-%dT%H:%M:%SZ fares daily run'
   bin/capture
   bin/capture --week-scan
+  bin/page
   # Sleep the rest of 24 hours, so the run time does not drift later by each sweep's length.
   left=$((86400 - ($(date +%s) - started)))
   [ "$left" -gt 0 ] || left=60

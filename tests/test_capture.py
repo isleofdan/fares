@@ -26,6 +26,7 @@ class ParseTest(unittest.TestCase):
         self.assertEqual(first["dest_airport"], "TLV")
         self.assertEqual(first["via"], "FCO")
         self.assertEqual(rows[3]["via"], "ICN ADD")
+        self.assertEqual(first["segment_cabins"], "business,business")
         mixed = rows[1]
         self.assertEqual(mixed["carrier_codes"], "TG,LY")
 

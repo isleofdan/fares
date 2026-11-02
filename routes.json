@@ -25,7 +25,7 @@
         "A nonstop exists and is always shown first on its own line: El Al, Tel Aviv-Narita, twice weekly, 787-8 with 20 business seats (japanaviationhub.com/?p=1221, read 2 Nov 2026); confirm the current frequency from the data source.",
         "Stopovers on the way (a Europe stop, or a Europe trip with Tel Aviv folded in) are welcome as alternatives, never as the first line."
       ],
-      "always_first": {"carrier": "LY", "origin_airport": "NRT", "nonstop": true}
+      "always_first": {"carrier": "LY", "name": "El Al", "origin_airport": "NRT", "nonstop": true}
     },
     {
       "id": "barcelona",
