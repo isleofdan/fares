@@ -2,7 +2,7 @@
 
 ## Current state
 
-Step 7.1 (skeleton) done. Step 7.2 done: Google Flights chosen as the fare source (see "Fare sources tried"). Step 7.3 done: the capture runs; first real sweeps recorded under "First capture". Step 7.4 done: daily loop written, not installed (see "Daily run"). Step 7.5 done: the page and its screenshot (see "The page").
+Step 7.1 (skeleton) done. Step 7.2 done: Google Flights chosen as the fare source (see "Fare sources tried"). Step 7.3 done: the capture runs; first real sweeps recorded under "First capture". Step 7.4 done: daily loop written, not installed (see "Daily run"). Step 7.5 done: the page and its screenshot (see "The page"). Step 7.6 done: first learning note in LEARNING.md.
 
 ## Decisions
 
