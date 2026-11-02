@@ -96,4 +96,10 @@ Screenshot: `docs/fares-page.png`, Playwright 1.56.1's headless Chromium, full p
 
 ## Close-out notes
 
-(none yet)
+### fares-one (2 Nov 2026 UTC, 3 Nov Tokyo time)
+
+- **What stands.** Steps 7.1 to 7.6 are built and committed on branch `claude/fares-one`, by the OpenRig team (builder `dev-owner@fares-one-mixed`, checker `dev-check@fares-one-mixed`). The checker's first round on `ba24f78` found three problems (an interrupted or throttled sweep replaced the last complete one on the page; unrecognised pages counted as "no flights"; a stale week scan could be shown); they were fixed in `7c3d197`, which the checker passed. 16 tests pass.
+- **Source chosen and why.** Google Flights, read through `fast-flights` 3.1.0 with our own parser: the only keyless candidate that returned prices from a script (Kayak, Momondo, Skyscanner and ITA Matrix need a browser). About 1.2 s a search. It gives no fare code or booking class.
+- **Sweep numbers.** Weekly grid: 336 searches, 15.8 min, 2,293 rows, but 17 searches met a bot check, so the default is now every 14 days: 168 searches, 8.4 min, about 1,150 rows, no refusals in two runs. The store and page are in `/data/home/dan/fares-data/`.
+- **Scheduling.** Mechanism found: the skill-mirror window in `/usr/local/bin/start.sh` lines 200 to 207 (a tmux loop: run, sleep 24 hours, append to a log). `bin/daily-loop` copies that shape and is not installed. The installation step (a permanent clone at `/data/home/dan/fares` and the start.sh lines under "Daily run" above) is left for a separately authorized session on `isleofdan/agent-machine`.
+- **What the next session needs.** The daily loop installed by that agent-machine session, so days of history build up; then the next fares session (Claude Code on the machine, with the OpenRig team) can put the page into the Spine and start tactics and the reading feed. The loop has been syntax-checked only, never run as a loop.
