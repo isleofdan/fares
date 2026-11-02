@@ -1,6 +1,6 @@
 # FIELD REPORT — fares-one — 2 Nov 2026
 
-Session fares-one, on the machine agent-machine-dan, permission mode auto (read with `get_session`: `permission_mode: auto`). Brief: the START HERE note on card `fares`, event 2372. Pull request: https://github.com/isleofdan/fares/pull/1 (open, not merged; a machine session never merges).
+Session fares-one, on the machine agent-machine-dan, permission mode auto (read with `get_session`: `permission_mode: auto`). Brief: the START HERE note on card `fares`, event 2372. Pull request: https://github.com/isleofdan/fares/pull/1 (open, not merged; a machine session never merges). Nothing changes on Dan's screen yet: the page is a local file on the machine (`/data/home/dan/fares-data/fares.html`), not hosted and not in the Spine, and the daily run is not switched on.
 
 ## What stands
 
@@ -32,6 +32,12 @@ Session fares-one, on the machine agent-machine-dan, permission mode auto (read 
 - **Three routes go blank about 8 months out.** For Houston, Detroit and Tel Aviv, the grid finds nothing for departures from late June 2027 onward (Tel Aviv from mid-June); Barcelona answers through August. The same thing happened in the sweep that met no bot checks, so it is not blocking. Most likely those fares are not on sale yet. The grid still covers 300 days, as the brief asks.
 - **The daily loop has been syntax-checked, never run as a loop.** Each of its three commands has been run on its own.
 
+## What the brief got wrong
+
+- **"The persistent place FACTS.md names" does not exist.** Sections 6, 7.3 and 7.4 refer to it, but FACTS.md names no folder for job data. It says only that anything that must survive a deploy lives under `/data/home/dan`. I chose `/data/home/dan/fares-data/`.
+- **"Your first commit creates `main`" did not fit the team procedure.** The team works on the brief's branch, so nothing created `main`, and with no base the pull request could not open. Fixed as described under "Divergences" (an empty `main` commit and a merge commit). A brief for an empty repository should have the supervisor create `main` before sending the job.
+- **A 300-day grid asks for more than is on sale.** For three of the four routes Google Flights returns nothing beyond about 8 months out, so roughly the last 100 days of the grid come back empty every day. The grid was kept as the brief asks; a later brief can shorten it.
+
 ## Checks
 
 1. Brief check, round 1: job `20261102-151551-bb9b9e`, FINDINGS. Fixed in the brief (card event 2367).
@@ -42,7 +48,8 @@ Session fares-one, on the machine agent-machine-dan, permission mode auto (read 
    - a page Google sends without a results block now counts as a refused search, not as "no flights";
    - the page shows only a week scan from the same day.
 5. Team check, round 2: `qitem-20261102161959-a8ec033d` → verdict `qitem-20261102162101-a22ce4e6`, PASS on `7c3d197`.
-6. Result check: run after this report is filed. Its verdict is named in the closing message.
+6. Result check, round 1: job `20261102-172721-c24407`, FINDINGS on report event 2378: (1) no "What the brief got wrong" section, so I added one; (2) the first paragraph did not say that nothing changes on Dan's screen, so I added that sentence.
+7. Result check on this version: its verdict is named in the closing message.
 
 ## What the next session needs
 
