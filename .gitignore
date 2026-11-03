@@ -1,0 +1,10 @@
+# The price store, page and logs live outside the repository, in /data/home/dan/fares-data/.
+# These patterns keep a stray copy out of the repository too.
+*.sqlite
+*.sqlite3
+*.db
+*.log
+fares-data/
+.venv/
+__pycache__/
+node_modules/

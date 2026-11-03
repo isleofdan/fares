@@ -1,0 +1,37 @@
+{
+  "about": "One entry per route. Every route starts in Tokyo (Narita NRT or Haneda HND both count), is a round trip, and is tracked in business and first class. Rules are Dan's own words unless marked. Later sessions add tactics and more routes here.",
+  "origin": {"city": "Tokyo", "airports": ["NRT", "HND"]},
+  "cabins": ["business", "first"],
+  "trip": {"kind": "round trip"},
+  "routes": [
+    {
+      "id": "houston",
+      "city": "Houston",
+      "airports": ["IAH", "HOU"],
+      "rules": ["No stated carrier preference."]
+    },
+    {
+      "id": "detroit",
+      "city": "Detroit",
+      "airports": ["DTW"],
+      "rules": ["Delta's nonstop from Haneda is the ideal but not required."],
+      "preferred": {"carrier": "DL", "origin_airport": "HND", "nonstop": true}
+    },
+    {
+      "id": "tel-aviv",
+      "city": "Tel Aviv",
+      "airports": ["TLV"],
+      "rules": [
+        "A nonstop exists and is always shown first on its own line: El Al, Tel Aviv-Narita, twice weekly, 787-8 with 20 business seats (japanaviationhub.com/?p=1221, read 2 Nov 2026); confirm the current frequency from the data source.",
+        "Stopovers on the way (a Europe stop, or a Europe trip with Tel Aviv folded in) are welcome as alternatives, never as the first line."
+      ],
+      "always_first": {"carrier": "LY", "name": "El Al", "origin_airport": "NRT", "nonstop": true}
+    },
+    {
+      "id": "barcelona",
+      "city": "Barcelona",
+      "airports": ["BCN"],
+      "rules": ["Stopovers welcome."]
+    }
+  ]
+}
