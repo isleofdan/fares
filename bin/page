@@ -1,4 +1,5 @@
 #!/bin/sh
-# Write the fares page, /data/home/dan/fares-data/fares.html, from the store (see fares/page.py).
+# Write the fares page, /data/home/dan/fares-data/fares.html, from the store, then send it to the
+# Spine (see fares/page.py; --no-push writes only, --spine <url> or FARES_SPINE_URL picks the address).
 cd "$(dirname "$0")/.." || exit 1
 exec .venv/bin/python -m fares.page "$@"

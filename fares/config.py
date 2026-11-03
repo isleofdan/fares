@@ -11,6 +11,17 @@ REPO = Path(__file__).resolve().parent.parent
 DATA_DIR = Path(os.environ.get("FARES_DATA", "/data/home/dan/fares-data"))
 
 
+# The Spine's fares route on its private listener (isleofdan/spine README.md, "The private
+# listener": from another app in Dan's Fly organization, http://spine-dan.internal:8080). No token:
+# the listener takes plain http from Dan's Fly private network. FARES_SPINE_URL overrides it;
+# bin/page --spine overrides both.
+SPINE_URL = "http://spine-dan.internal:8080/internal/fares/page"
+
+
+def spine_url() -> str:
+    return os.environ.get("FARES_SPINE_URL") or SPINE_URL
+
+
 def store_path() -> Path:
     return DATA_DIR / "fares.sqlite"
 
