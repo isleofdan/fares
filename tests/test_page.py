@@ -153,6 +153,31 @@ class PageTest(unittest.TestCase):
         self.assertIn("none found in this capture", tlv)
         self.assertLess(tlv.index("Nonstop: El Al"), tlv.index("Cheapest one-stop"))
 
+    def test_history_line_counts_complete_full_sweeps_and_days(self):
+        g = self.gflights
+        real = self.capture.now_utc
+        self.capture.now_utc = lambda: "2026-11-01T10:00:00Z"
+        try:
+            self.day()  # a full sweep and a week scan on 1 Nov UTC
+        finally:
+            self.capture.now_utc = real
+        self.day()
+        self.capture.run(7, 1, search=lambda *a: g.Answer(200, self.rows))  # a second full sweep today
+        refused = self.capture.run(7, 5, search=lambda *a: (_ for _ in ()).throw(g.Blocked("x")))
+        self.assertFalse(refused["completed"])  # throttled: not history
+        out = self.render()
+        for rid in ("houston", "detroit", "tel-aviv", "barcelona"):
+            sec = out[out.index(f"<section id={rid}>"):]
+            sec = sec[:sec.index("</section>")]
+            self.assertIn("History: 3 complete full sweeps on 2 capture days (UTC dates", sec)
+            self.assertIn("1 Nov 2026 19:00 Tokyo time – ", sec)
+            self.assertLess(sec.index("History:"), sec.index("<h3>"))  # above the nonstop lines
+
+    def test_history_line_with_no_complete_sweep(self):
+        from fares import config, page, store
+        conn = store.connect(config.store_path())
+        self.assertIn("no complete full sweep", page.history_line(conn, "houston"))
+
     def test_second_day_compares_with_history(self):
         real = self.capture.now_utc
         self.capture.now_utc = lambda: "2026-11-01T10:00:00Z"  # yesterday

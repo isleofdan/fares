@@ -1,5 +1,7 @@
 """Run: .venv/bin/python -m unittest discover -s tests"""
 
+import contextlib
+import io
 import json
 import os
 import sqlite3
@@ -50,14 +52,27 @@ class PageAnswerTest(unittest.TestCase):
 
 
 class GridTest(unittest.TestCase):
-    def test_weekly_grid_stays_inside_300_days(self):
+    def test_default_grid_stays_inside_the_measured_294_days(self):
+        from fares.capture import HORIZON_DAYS, trip_grid
+
+        self.assertEqual(HORIZON_DAYS, 294)
+        trips = trip_grid(date(2026, 11, 2), 7)
+        self.assertEqual(len(trips), 41)
+        self.assertEqual(trips[0], ("2026-11-03", "2026-11-10"))
+        self.assertLessEqual((date.fromisoformat(trips[-1][1]) - date(2026, 11, 2)).days, 294)
+        # The every-14-days grid keeps its 21 trips: the last one returns 288 days out.
+        trips = trip_grid(date(2026, 11, 2), 14)
+        self.assertEqual(len(trips), 21)
+        self.assertEqual((date.fromisoformat(trips[-1][1]) - date(2026, 11, 2)).days, 288)
+
+    def test_old_300_day_grid_still_runs_by_hand(self):
         from fares.capture import trip_grid
 
-        trips = trip_grid(date(2026, 11, 2), 7)
+        trips = trip_grid(date(2026, 11, 2), 7, 300)
         self.assertEqual(len(trips), 42)
-        self.assertEqual(trips[0], ("2026-11-03", "2026-11-10"))
         self.assertLessEqual((date.fromisoformat(trips[-1][1]) - date(2026, 11, 2)).days, 300)
-        self.assertEqual(len(trip_grid(date(2026, 11, 2), 14)), 21)
+        self.assertEqual(len(trip_grid(date(2026, 11, 2), 14, 300)), 21)
+        self.assertEqual(len(trip_grid(date(2026, 11, 2), 14, 100)), 7)
 
 
 class CaptureTest(unittest.TestCase):
@@ -89,6 +104,47 @@ class CaptureTest(unittest.TestCase):
             conn.execute("DELETE FROM fares")
         log = config.capture_log_path().read_text()
         self.assertIn("done: rows=192 queries=16", log)
+
+    def test_horizon_option_reaches_the_grid(self):
+        from fares import capture
+
+        capture.PAUSE_SECONDS = 0
+        for argv, horizon in (([], 294), (["--horizon", "300"], 300), (["--horizon", "100"], 100)):
+            seen = []
+            real = capture.run
+            capture.run = lambda *a, **k: seen.append(k["horizon_days"]) or {
+                "completed": True, "queries": 1, "failed": 0}
+            try:
+                self.assertEqual(capture.main(argv + ["--limit", "1"]), 0)
+            finally:
+                capture.run = real
+            self.assertEqual(seen, [horizon])
+        with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+            capture.main(["--horizon", "7"])
+
+    def test_log_names_last_departure_with_results_per_route_and_cabin(self):
+        from fares import capture, config, gflights
+
+        capture.PAUSE_SECONDS = 0
+        rows = gflights.parse_payload(json.loads(FIXTURE.read_text()))
+        trips = capture.trip_grid(capture.datetime.now(capture.timezone.utc).date(), 14)[:3]
+
+        def answer(dest, cabin, depart, ret):
+            if dest == "IAH":
+                return gflights.Answer(200, [])  # houston: nothing on sale
+            if dest == "TLV" and depart == trips[2][0]:
+                return gflights.Answer(200, [])  # tel aviv: blank on the last date
+            return gflights.Answer(200, rows)
+
+        result = capture.run(14, 3, search=answer)
+        self.assertEqual(result["last"]["houston/business"], None)
+        self.assertEqual(result["last"]["tel-aviv/first"], trips[1][0])
+        self.assertEqual(result["last"]["barcelona/business"], trips[2][0])
+        line = config.capture_log_path().read_text().splitlines()[-1]
+        self.assertIn(" horizon=294d ", line)
+        self.assertIn("last=houston/business:none last=houston/first:none", line)
+        self.assertIn(f"last=tel-aviv/business:{trips[1][0]}", line)
+        self.assertIn(f"last=barcelona/first:{trips[2][0]}", line)
 
     def test_week_scan_is_business_on_seven_consecutive_days(self):
         from fares import capture, gflights
