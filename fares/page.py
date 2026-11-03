@@ -355,7 +355,11 @@ def push(url, body, timeout=None) -> bool:
         print(f"sent page to {url}: sweep {body['sweep']}, {len(body['summary'])} routes")
         return True
     except urllib.error.HTTPError as e:
-        text = e.read().decode("utf-8", "replace")
+        # The answer's body can itself fail to arrive whole; the status line is still the answer.
+        try:
+            text = e.read().decode("utf-8", "replace")
+        except Exception as read_error:
+            text = f"(its answer broke off: {type(read_error).__name__})"
         try:
             text = json.loads(text).get("error", text)
         except (ValueError, AttributeError):
@@ -398,7 +402,10 @@ def main(argv=None) -> int:
     if body is None:
         print(f"page not sent to {args.spine}: no complete full sweep yet")
         return 0
-    push(args.spine, body)
+    try:
+        push(args.spine, body)
+    except Exception as e:  # push prints its own line; this only guards against a line it could not print
+        print(f"page not sent to {args.spine}: {type(e).__name__}: {one_line(e)}")
     return 0
 
 

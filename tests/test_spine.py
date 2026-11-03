@@ -265,6 +265,38 @@ class PushTest(Base):
         self.assertEqual(lines[-1], f"page not sent to {stub.url}: the Spine answered HTTP 400: {error}")
         self.assertEqual(len(lines), 2)
 
+    def test_an_error_answer_that_breaks_off_prints_one_line_and_exits_0(self):
+        # dev-check, fares-three: a 400 declaring 100 bytes of body and closing after 9 made
+        # e.read() raise IncompleteRead inside the error handler, and bin/page exit 1.
+        s = socket.socket()
+        s.bind(("127.0.0.1", 0))
+        s.listen(1)
+        url = f"http://127.0.0.1:{s.getsockname()[1]}/internal/fares/page"
+
+        def answer():
+            conn, _ = s.accept()
+            data = b""
+            while b"\r\n\r\n" not in data:
+                data += conn.recv(65536)
+            head, rest = data.split(b"\r\n\r\n", 1)
+            length = int([l for l in head.split(b"\r\n") if l.lower().startswith(b"content-length:")][0].split(b":")[1])
+            while len(rest) < length:
+                rest += conn.recv(65536)
+            conn.sendall(b"HTTP/1.1 400 Bad Request\r\ncontent-type: application/json\r\ncontent-length: 100\r\n\r\n{\"error\":")
+            conn.close()
+
+        t = threading.Thread(target=answer, daemon=True)
+        t.start()
+        try:
+            code, lines = self.run_main("--spine", url)
+        finally:
+            t.join(5)
+            s.close()
+        self.assertEqual(code, 0)
+        self.assertTrue(Path(self.tmp.name, "fares.html").exists())
+        self.assertEqual(len(lines), 2, lines)
+        self.assertEqual(lines[-1], f"page not sent to {url}: the Spine answered HTTP 400: (its answer broke off: IncompleteRead)")
+
     def test_a_closed_port_prints_one_line_and_exits_0(self):
         s = socket.socket()
         s.bind(("127.0.0.1", 0))
