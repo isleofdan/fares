@@ -13,9 +13,13 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt   # once
 bin/capture              # one full sweep into /data/home/dan/fares-data/fares.sqlite (about 9 min, every 14 days, trips back within 294 days)
 bin/capture --week-scan  # seven days in a row, business: which days each nonstop flies
 bin/capture --horizon 300  # the older, longer grid (default 294 days, measured; see PLAN.md, fares-two)
-bin/page                 # writes /data/home/dan/fares-data/fares.html
+bin/page                 # writes /data/home/dan/fares-data/fares.html, then sends it to the Spine (/fares)
+bin/page --no-push       # writes the page only, sends nothing
+bin/page --spine <url>   # sends to another address (default: FARES_SPINE_URL, else http://spine-dan.internal:8080/internal/fares/page)
 bin/daily-loop           # all three, then again every 24 hours (not installed anywhere; see PLAN.md)
 .venv/bin/python -m unittest discover -s tests -t .   # tests
 ```
+
+The send is one plain http POST to the Spine's private listener (Dan's Fly private network, no token), timeout 20 seconds, never retried; success or failure is one printed line, and `bin/page` exits 0 either way, so the daily loop goes on when the Spine is unreachable.
 
 Logs: `capture.log` (one line per sweep) and `loop.log` (the daily loop), both in `/data/home/dan/fares-data/`.

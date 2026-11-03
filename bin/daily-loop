@@ -2,7 +2,9 @@
 # Daily fares run, in the same shape as the machine's skill-mirror window (start.sh): run now,
 # then once every 24 hours, forever; a failed run does not end the loop. Each run is the full
 # capture sweep, the week scan, then the page. All output is appended to
-# /data/home/dan/fares-data/loop.log. Quiet: nothing is sent anywhere.
+# /data/home/dan/fares-data/loop.log. The page step also sends the page to the Spine's private
+# listener (bin/page; one line in the log either way, and a Spine that does not answer never stops
+# the loop); nothing else is sent anywhere.
 #
 # Prepared only: nothing registers or starts this. The line start.sh would need is in PLAN.md.
 # By hand, in a tmux window: bin/daily-loop

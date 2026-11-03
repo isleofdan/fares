@@ -1,12 +1,19 @@
-"""Write one plain HTML page from the store: today's prices on each route against that route's history.
+"""Write one plain HTML page from the store: today's prices on each route against that route's history,
+then send it, with a short summary per route, to the Spine's private listener (session fares-three).
 
-Run: bin/page   (writes /data/home/dan/fares-data/fares.html)
+Run: bin/page   (writes /data/home/dan/fares-data/fares.html, then sends it to the Spine)
+     bin/page --no-push   (writes the page only)
+     bin/page --spine <url>   (sends to another address; FARES_SPINE_URL sets the default)
 """
 
+import argparse
 import html
+import json
 import sqlite3
 import statistics
 import sys
+import urllib.error
+import urllib.request
 from datetime import date, datetime, timedelta, timezone
 
 from . import config, store
@@ -62,16 +69,25 @@ def history(conn, route, cabin, kind, carrier, before_day):
         f" GROUP BY day ORDER BY day", args).fetchall()
 
 
-def compare(today_price, past):
+def standing(today_price, past):
+    """Where today's price stands against its history: None when there is no earlier day, else the
+    word ("below" or "above"), the difference, the typical (median) daily low, the number of earlier
+    days and the lowest day. The page's compare() line and the Spine summary both read this."""
     if not past:
-        return "first capture: the comparison fills in as days pass"
+        return None
     lows = [r["low"] for r in past]
-    best = min(past, key=lambda r: r["low"])
     typical = int(statistics.median(lows))
     diff = today_price - typical
-    word = "below" if diff < 0 else "above"
-    return (f"{money(abs(diff))} {word} the typical {money(typical)} over {len(lows)} earlier day(s);"
-            f" lowest seen {money(best['low'])} on {best['day']}")
+    return {"word": "below" if diff < 0 else "above", "diff": diff, "typical": typical,
+            "days": len(lows), "best": min(past, key=lambda r: r["low"])}
+
+
+def compare(today_price, past):
+    s = standing(today_price, past)
+    if s is None:
+        return "first capture: the comparison fills in as days pass"
+    return (f"{money(abs(s['diff']))} {s['word']} the typical {money(s['typical'])} over {s['days']} earlier day(s);"
+            f" lowest seen {money(s['best']['low'])} on {s['best']['day']}")
 
 
 def mixed_cabin_note(row, cabin):
@@ -99,15 +115,21 @@ def fare_line(conn, row, kind, route, cabin, day):
     )
 
 
-def history_line(conn, route):
-    """How much history this route's comparisons rest on: completed full sweeps (never week scans,
-    never incomplete ones) that hold rows for the route, the capture days they fall on (UTC dates,
-    the same days `history` groups by) and the span of their capture times in Tokyo time."""
-    r = conn.execute(
+def history_counts(conn, route):
+    """Completed full sweeps (never week scans, never incomplete ones) that hold rows for the route,
+    the capture days they fall on (UTC dates, the same days `history` groups by), and the first and
+    latest capture times. The page's history line and the Spine summary both read this."""
+    return conn.execute(
         "SELECT COUNT(DISTINCT sweep_id) AS sweeps, COUNT(DISTINCT substr(captured_at, 1, 10)) AS days,"
         " MIN(captured_at) AS first, MAX(captured_at) AS latest FROM fares WHERE route = ?"
         " AND sweep_id IN (SELECT id FROM sweeps WHERE completed = 1 AND grid_step_days > 1)",
         (route,)).fetchone()
+
+
+def history_line(conn, route):
+    """How much history this route's comparisons rest on (history_counts), with the span of the
+    capture times in Tokyo time."""
+    r = history_counts(conn, route)
     if not r["sweeps"]:
         return "<p class=history>History: no complete full sweep holds this route yet.</p>"
     sweeps = f"{r['sweeps']} complete full sweep{'s' if r['sweeps'] > 1 else ''}"
@@ -125,14 +147,23 @@ def nonstop_days(rows):
     return {c: sorted(d) for c, d in days.items()}
 
 
-def route_section(conn, profile, full, scan):
-    rid = profile["id"]
+def today_rows(conn, rid, full, scan):
+    """Today's rows for a route: the newest complete full sweep's and the same day's week scan's."""
     q = "SELECT * FROM fares WHERE route = ? AND sweep_id = ?"
     rows = conn.execute(q, (rid, full["id"])).fetchall() if full else []
     scan_rows = conn.execute(q, (rid, scan["id"])).fetchall() if scan else []
-    today = rows + scan_rows
-    # History is everything captured on days before today's full sweep.
-    day = full["started_at"][:10] if full else "9999"
+    return rows + scan_rows
+
+
+def history_day(full):
+    """History is everything captured on days before today's full sweep."""
+    return full["started_at"][:10] if full else "9999"
+
+
+def route_section(conn, profile, full, scan):
+    rid = profile["id"]
+    today = today_rows(conn, rid, full, scan)
+    day = history_day(full)
     days = nonstop_days(today)
     names = {r["carrier_codes"]: r["carriers"] for r in today if r["stops"] == 0}
     expected = profile.get("always_first") or {}
@@ -269,7 +300,86 @@ def render(conn) -> str:
             + "\n".join(sections) + "</body></html>")
 
 
+# --- the Spine --------------------------------------------------------------------------------
+
+def route_summary(conn, rid, full, scan):
+    """One route's line for the Spine, from the same rows and functions the page uses. The page lists
+    nonstop and one-stop trips only, so the cheapest is the lowest of those (stops <= 1); its standing
+    is compare()'s, against the history of its kind (that nonstop carrier, or one-stop)."""
+    today = [r for r in today_rows(conn, rid, full, scan) if r["stops"] <= 1]
+    day = history_day(full)
+    out = {"route": rid, "cheapest": {}, "against_typical": {}}
+    for cabin in CABINS:
+        best = cheapest([r for r in today if r["cabin"] == cabin])
+        if best is None:
+            out["cheapest"][cabin] = out["against_typical"][cabin] = None
+            continue
+        kind = "nonstop" if best["stops"] == 0 else "one-stop"
+        s = standing(best["price"], history(conn, rid, cabin, kind, best["carrier_codes"], day))
+        out["cheapest"][cabin] = best["price"]
+        out["against_typical"][cabin] = s["word"] if s else "first capture"
+    counts = history_counts(conn, rid)
+    out["sweeps"], out["days"] = counts["sweeps"], counts["days"]
+    # The whole sweep's numbers, as capture.log prints them (queries=, failed=), on every route.
+    out["last_run"] = {"searches": full["queries"] if full else 0, "refusals": full["failed_queries"] if full else 0}
+    return out
+
+
+def spine_body(conn, page_html, rendered_at):
+    """The body POST /internal/fares/page takes (isleofdan/spine, lib/fares.js); None when there is
+    no complete full sweep yet, since the Spine needs one's id."""
+    full, scan = latest_captures(conn)
+    if full is None:
+        return None
+    return {"rendered_at": rendered_at, "sweep": full["id"], "html": page_html,
+            "summary": [route_summary(conn, p["id"], full, scan) for p in config.load_profiles()["routes"]]}
+
+
+def one_line(text) -> str:
+    return " ".join(str(text).split())[:500]
+
+
+PUSH_TIMEOUT = 20  # seconds; one try only
+
+
+def push(url, body, timeout=None) -> bool:
+    """Send the body once; print one line either way. Never raises, never retries: the daily loop
+    goes on whether or not the Spine answered."""
+    data = json.dumps(body).encode("utf-8")
+    req = urllib.request.Request(url, data=data, method="POST", headers={"content-type": "application/json"})
+    # Straight to the address: a proxy set in the environment has no route to Dan's private network.
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    try:
+        with opener.open(req, timeout=PUSH_TIMEOUT if timeout is None else timeout) as res:
+            res.read()
+        print(f"sent page to {url}: sweep {body['sweep']}, {len(body['summary'])} routes")
+        return True
+    except urllib.error.HTTPError as e:
+        # The answer's body can itself fail to arrive whole; the status line is still the answer.
+        try:
+            text = e.read().decode("utf-8", "replace")
+        except Exception as read_error:
+            text = f"(its answer broke off: {type(read_error).__name__})"
+        try:
+            text = json.loads(text).get("error", text)
+        except (ValueError, AttributeError):
+            pass
+        print(f"page not sent to {url}: the Spine answered HTTP {e.code}: {one_line(text)}")
+    except urllib.error.URLError as e:
+        print(f"page not sent to {url}: {one_line(e.reason)}")
+    except (TimeoutError, OSError) as e:
+        print(f"page not sent to {url}: {one_line(e) or type(e).__name__}")
+    except Exception as e:  # anything else still must not stop the loop
+        print(f"page not sent to {url}: {type(e).__name__}: {one_line(e)}")
+    return False
+
+
 def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(prog="bin/page", description="Write the fares page, then send it to the Spine.")
+    ap.add_argument("--spine", default=config.spine_url(), metavar="URL",
+                    help=f"the Spine's fares route (default: FARES_SPINE_URL, else {config.SPINE_URL})")
+    ap.add_argument("--no-push", action="store_true", help="write the page only; send nothing")
+    args = ap.parse_args(argv)
     path = config.store_path()
     if not path.exists():
         print(f"no store at {path}; run bin/capture first", file=sys.stderr)
@@ -277,9 +387,25 @@ def main(argv=None) -> int:
     conn = store.connect(path)
     out = config.page_path()
     tmp = out.with_suffix(".html.tmp")
-    tmp.write_text(render(conn), encoding="utf-8")
+    rendered_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    page_html = render(conn)
+    tmp.write_text(page_html, encoding="utf-8")
     tmp.replace(out)
     print(f"wrote {out}")
+    if args.no_push:
+        return 0
+    try:
+        body = spine_body(conn, page_html, rendered_at)
+    except Exception as e:  # the page is written; a summary that cannot be built must not stop the loop
+        print(f"page not sent to {args.spine}: the summary could not be built: {type(e).__name__}: {one_line(e)}")
+        return 0
+    if body is None:
+        print(f"page not sent to {args.spine}: no complete full sweep yet")
+        return 0
+    try:
+        push(args.spine, body)
+    except Exception as e:  # push prints its own line; this only guards against a line it could not print
+        print(f"page not sent to {args.spine}: {type(e).__name__}: {one_line(e)}")
     return 0
 
 
