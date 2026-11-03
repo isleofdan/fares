@@ -32,16 +32,16 @@ Screenshot on GitHub: https://github.com/isleofdan/fares/blob/claude/fares-two/d
    | 8 | 08:27:46 | 08:29:11 | week scan | 28 | 0 | 251 | yes (1.4 min) |
 
    Earlier sweeps, from fares-one on 2 Nov: 1 (incomplete, 145 rows); 2 (every 7 days, 336 searches, 17 refused, 2,293 rows, marked complete); 3 and 6 (week scans); 4 and 5 (every 14 days, 168 searches, 0 refused, 1,140 and 1,152 rows).
-3. **Step 2, the sale horizon** (read only, from complete full sweeps 2, 4, 5 and 7). The grid's last departure is 281 days out, because a 7-night trip must be back within 300 days. Searches refused in sweep 2 were left out. No route had an empty date inside its answered range.
+3. **Step 2, the sale horizon** (read only, across complete full sweeps 2, 4, 5 and 7 together). Sweeps 2, 4 and 5 started 2 Nov and sweep 7 started 3 Nov. Sweep 2 searched every 7 days and the others every 14. The grid's last departure is 281 days after the sweep day, because a 7-night trip must be back within 300 days. Searches refused in sweep 2 were left out. No route had an empty date inside its answered range.
 
-   | Route | Cabin | Latest departure with results (days after sweep day) | Every later search empty from |
+   | Route | Cabin | Latest departure with results, any complete sweep | Every later search, in every complete sweep, empty from |
    |---|---|---|---|
-   | Houston | business, first | 225 (sweep 7: 2027-06-16; sweep 2: 232) | 2027-06-30 (sweep 7) |
-   | Detroit | business, first | 225 (2027-06-16) | 2027-06-30 |
-   | Tel Aviv | business, first | 211 (2027-06-02; sweep 2: 218) | 2027-06-16 |
-   | Barcelona | business, first | 281 (2027-08-11), the last grid date | never empty |
+   | Houston | business, first | 2027-06-22 (sweep 2; 232 days after 2 Nov) | 2027-06-29 (sweep 2; sweeps 4, 5 and 7 empty from 2027-06-29 and 2027-06-30) |
+   | Detroit | business, first | 2027-06-22 (sweep 2; 232 days after 2 Nov) | 2027-06-29 (as Houston) |
+   | Tel Aviv | business, first | 2027-06-08 (sweep 2; 218 days after 2 Nov) | 2027-06-15 (sweep 2; sweeps 4, 5 and 7 empty from 2027-06-15 and 2027-06-16) |
+   | Barcelona | business, first | 2027-08-11 (sweep 7; 281 days after 3 Nov, the last grid date) | never empty inside the grid |
 
-   PLAN.md's claim that three routes go blank about 8 months out is confirmed: Houston and Detroit at about 7.4 months, Tel Aviv at about 7 months. Barcelona did not go blank inside the grid.
+   The 14-day sweeps alone stop earlier (Houston and Detroit 2027-06-15/16, Tel Aviv 2027-06-01/02) only because they do not search the in-between dates. PLAN.md's claim that three routes go blank about 8 months out is confirmed: Houston and Detroit at about 7.6 months, Tel Aviv at about 7.2 months. Barcelona did not go blank inside the grid.
 4. **Step 3, the measured horizon.** The latest answered trip departs 281 days out and returns at 288. Rounded up to the next multiple of 14 that is 294, under the 300 cap.
 5. **Hand run with the new default** (`bin/capture`, started by the builder seat, not by the loop): sweep 9, 09:04:49–09:13:19 UTC (18:04–18:13 JST). It ran 168 searches with 0 failed and throttled 0, took 8.5 minutes and wrote 1,121 rows, marked complete. Its capture.log line ends `horizon=294d … last=houston/business:2027-06-16 last=houston/first:2027-06-16 last=detroit/business:2027-06-16 last=detroit/first:2027-06-16 last=tel-aviv/business:2027-06-02 last=tel-aviv/first:2027-06-02 last=barcelona/business:2027-08-11 last=barcelona/first:2027-08-11`.
 6. **Tests.** `.venv/bin/python -m unittest discover -s tests -t .` gave `Ran 21 tests … OK`, run by the checker and again by this session. fares-one had 16.
@@ -57,7 +57,10 @@ Screenshot on GitHub: https://github.com/isleofdan/fares/blob/claude/fares-two/d
 | Brief check 2 | job 20261103-085447-eec4d2 | PASS | – |
 | Team check 1 (dev-check) | qitem-20261103091427-845bf1e0, verdict on qitem-20261103091615-b39201e8 | Two documentation corrections asked; code and page clear | (1) PLAN.md said re-running with `--horizon 300` would show a wider horizon, but at 14-day spacing it plans the same 21 trips. It now says an explicit wider probe is needed (`--every 7 --horizon 300`, with the refusal caveat). (2) Kiwi's wording now matches its source: new Tequila partnerships by invitation only. Both fixed in 6c8fc29. |
 | Team check 2 (dev-check) | qitem-20261103091756-0b882d210287c046 | PASS candidate 6c8fc29 | – |
-| Result check | run after this report is filed; recorded on the card | – | – |
+| Result check 1 | job 20261103-092050-7443eb (report event 2419) | FINDINGS | (1) Step 2's table mixed sweep 7's dates with sweep 2's: now the latest departure and blank-from date across all four complete sweeps, with explicit dates (Houston and Detroit 2027-06-22, Tel Aviv 2027-06-08); PLAN.md's close-out note corrected the same way. The horizon (294) is unchanged: it rests on Barcelona, 2027-08-11. (2) This section lacked the result-check tools' details and outcome: added below. |
+| Result check 2 | run on this corrected report; its verdict is named in the closing message | – | – |
+
+Result-check tools, as their schemas document them. `check_result` takes card (required), pull_request (required, one GitHub PR URL), and optionally report or report_event, and brief or brief_event. It answers at once with a job id. `result_check_status` takes job. Its state is queued, running, done or failed; verdict is PASS, FINDINGS, or null until done; findings are numbered, each with step, problem, evidence and fix. FINDINGS means fix every finding and check again; failed means the check did not finish and must be run again, never read as a pass. This session called `check_result` with card `fares`, pull_request https://github.com/isleofdan/fares/pull/2, report_event and brief_event 2416, then read `result_check_status` until state was done.
 
 ## Stall watch
 
@@ -74,7 +77,7 @@ Dan asked for a check every 5 to 7 minutes, with any stall recorded for this rep
 
 ## What the brief got wrong
 
-- **The horizon rule saves nothing.** Barcelona answers on the grid's last date, so the measured horizon is set by the grid itself, not by what is on sale. At 14-day spacing, 294 days plans the same 21 departures as 300; only the stated limit changed. The real waste is per route: Houston and Detroit are empty after 225 days and Tel Aviv after 211, so 30 of 168 searches a day return nothing. Fitting that needs a per-route horizon in routes.json, which the brief's single default does not allow. Where Barcelona stops selling is not yet known.
+- **The horizon rule saves nothing.** Barcelona answers on the grid's last date, so the measured horizon is set by the grid itself, not by what is on sale. At 14-day spacing, 294 days plans the same 21 departures as 300; only the stated limit changed. The real waste is per route: Houston and Detroit are empty after about 232 days and Tel Aviv after about 218, so 30 of 168 searches a day (5 departures × 6 route-cabins) return nothing. Fitting that needs a per-route horizon in routes.json, which the brief's single default does not allow. Where Barcelona stops selling is not yet known.
 - **"Record the snapshot in FACTS.md as the previous session did."** fares-one recorded no fares rig in FACTS.md (grep for `fares-one` finds nothing). This session added its own line.
 - **Sweep 2 counts as complete with 17 refusals.** The store marks it complete, because its refusals never came 3 in a row, so it was not throttled. That matches the rule as written ("not throttled"), but "every planned search ran" reads stricter. I left the rule unchanged; the next brief may want to decide it.
 
@@ -99,4 +102,4 @@ None.
 
 ## Closing message to Dan
 
-The first daily capture ran clean on the machine: 168 searches, no refusals, 1,133 prices in 8 minutes. Nonstop and one-stop fares are on sale about 225 days out on Houston and Detroit and 211 on Tel Aviv. Barcelona sells as far as the search reaches, so the measured limit is 294 days and the daily search does the same 21 dates per route as before. Skipping the empty dates for Houston, Detroit and Tel Aviv would need a per-route limit, a later change. The page now shows, on each route, how many days of history its "typical" and "lowest seen" rest on: 5 complete sweeps over 2 days so far. The paid fare sources are written up for later: only Amadeus and Duffel give fare codes, and Kiwi takes new partners by invitation only. Pull request: https://github.com/isleofdan/fares/pull/2 (not merged; it merges on your line in a cloud session). Needed from you: nothing to decide.
+The first daily capture ran clean on the machine: 168 searches, no refusals, 1,133 prices in 8 minutes. Fares are on sale about 232 days out on Houston and Detroit and 218 on Tel Aviv. Barcelona sells as far as the search reaches, so the measured limit is 294 days and the daily search does the same 21 dates per route as before. Skipping the empty dates for Houston, Detroit and Tel Aviv would need a per-route limit, a later change. The page now shows, on each route, how many days of history its "typical" and "lowest seen" rest on: 5 complete sweeps over 2 days so far. The paid fare sources are written up for later: only Amadeus and Duffel give fare codes, and Kiwi takes new partners by invitation only. Pull request: https://github.com/isleofdan/fares/pull/2 (not merged; it merges on your line in a cloud session). Needed from you: nothing to decide.
