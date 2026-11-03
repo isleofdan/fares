@@ -99,6 +99,23 @@ def fare_line(conn, row, kind, route, cabin, day):
     )
 
 
+def history_line(conn, route):
+    """How much history this route's comparisons rest on: completed full sweeps (never week scans,
+    never incomplete ones) that hold rows for the route, the capture days they fall on (UTC dates,
+    the same days `history` groups by) and the span of their capture times in Tokyo time."""
+    r = conn.execute(
+        "SELECT COUNT(DISTINCT sweep_id) AS sweeps, COUNT(DISTINCT substr(captured_at, 1, 10)) AS days,"
+        " MIN(captured_at) AS first, MAX(captured_at) AS latest FROM fares WHERE route = ?"
+        " AND sweep_id IN (SELECT id FROM sweeps WHERE completed = 1 AND grid_step_days > 1)",
+        (route,)).fetchone()
+    if not r["sweeps"]:
+        return "<p class=history>History: no complete full sweep holds this route yet.</p>"
+    sweeps = f"{r['sweeps']} complete full sweep{'s' if r['sweeps'] > 1 else ''}"
+    days = f"{r['days']} capture day{'s' if r['days'] > 1 else ''} (UTC dates, as the comparisons count them)"
+    return (f"<p class=history>History: {sweeps} on {days},"
+            f" {tokyo_time(r['first'])} – {tokyo_time(r['latest'])}.</p>")
+
+
 def nonstop_days(rows):
     """Carrier code -> sorted weekdays on which today's searches found its nonstop departing."""
     days = {}
@@ -125,7 +142,8 @@ def route_section(conn, profile, full, scan):
         nonstop_carriers.insert(0, first_carrier)
 
     parts = [f"<section id={rid}><h2>Tokyo – {html.escape(profile['city'])}</h2>",
-             "<p class=rules>Rules: " + " ".join(html.escape(r) for r in profile["rules"]) + "</p>"]
+             "<p class=rules>Rules: " + " ".join(html.escape(r) for r in profile["rules"]) + "</p>",
+             history_line(conn, rid)]
 
     reading = []
     for code in nonstop_carriers:
@@ -216,6 +234,7 @@ ul { padding-left:1.2rem; margin:.2rem 0; } li { margin:.35rem 0; }
 @media (prefers-color-scheme: dark) { .mixed { color:#f6ae5c; } }
 .cabin { display:inline-block; min-width:5.5rem; font-weight:600; }
 .rules, .intro { color:var(--muted); font-size:.9rem; }
+.history { font-size:.9rem; margin:.3rem 0; }
 .reading { background:color-mix(in srgb, var(--accent) 8%, transparent); padding:.7rem .9rem; border-radius:6px; }
 dl { font-size:.9rem; } dt { font-weight:600; } dd { margin:0 0 .4rem 0; color:var(--muted); }
 """
