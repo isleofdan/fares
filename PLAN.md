@@ -2,7 +2,7 @@
 
 ## Current state
 
-Step 7.1 (skeleton) done. Step 7.2 done: Google Flights chosen as the fare source (see "Fare sources tried"). Step 7.3 done: the capture runs; first real sweeps recorded under "First capture". Step 7.4 done: daily loop written, not installed (see "Daily run"). Step 7.5 done: the page and its screenshot (see "The page"). Step 7.6 done: first learning note in LEARNING.md.
+fares-two (3 Nov 2026): horizon fitted to 294 days, history line on the page, keyed sources recorded (see its close-out note). Step 7.1 (skeleton) done. Step 7.2 done: Google Flights chosen as the fare source (see "Fare sources tried"). Step 7.3 done: the capture runs; first real sweeps recorded under "First capture". Step 7.4 done: daily loop written, not installed (see "Daily run"). Step 7.5 done: the page and its screenshot (see "The page"). Step 7.6 done: first learning note in LEARNING.md.
 
 ## Decisions
 
@@ -50,7 +50,7 @@ Packages are listed in `requirements.txt` and installed into `.venv/` inside the
 
 ## First capture (step 7.3)
 
-The capture (`bin/capture`, code in `fares/capture.py`) searches every route and cabin over a grid of 7-night round trips. Departures start tomorrow, and the last trip is back within 300 days. There is a 2-second pause between searches. One row is stored per itinerary returned, in `/data/home/dan/fares-data/fares.sqlite`. The database refuses updates and deletes to fare rows, so history only grows. Each run adds one line to `/data/home/dan/fares-data/capture.log`, plus a line for each refused or failed search. A sweep stops early if the source refuses 3 searches in a row.
+The capture (`bin/capture`, code in `fares/capture.py`) searches every route and cabin over a grid of 7-night round trips. Departures start tomorrow, and the last trip is back within 294 days (300 until fares-two; `--horizon 300` still runs the old grid, see the fares-two close-out note). There is a 2-second pause between searches. One row is stored per itinerary returned, in `/data/home/dan/fares-data/fares.sqlite`. The database refuses updates and deletes to fare rows, so history only grows. Each run adds one line to `/data/home/dan/fares-data/capture.log`, plus a line for each refused or failed search. A sweep stops early if the source refuses 3 searches in a row.
 
 Real runs on 2 Nov 2026 (UTC), source Google Flights:
 
@@ -106,7 +106,9 @@ Rows per route and cabin, sweep 2 (weekly) / sweep 4 (every 14 days):
 - A plain-words reading under each route, and a list of the words used, at the top of the page.
 - **Mixed cabins.** A first class search often returns trips that are first class only on the long flight and business on a connection: 321 of 497 first-search rows in sweep 5. The cabin of each flight is now stored (`segment_cabins`, added after sweep 4; earlier rows hold NULL) and the page names it, e.g. "mixed cabins: EY801 first, EY595 business".
 
-Screenshot: `docs/fares-page.png`, Playwright 1.56.1's headless Chromium, full page with all four route sections, from sweep 5 (16:04–16:12Z, 168 searches, 0 refused, 1,152 rows) and week scan 6 (245 rows), both on 2 Nov 2026 UTC. To take it again: `npm install`, then `npm run screenshot`.
+Each route section opens with a history line: how many complete full sweeps (week scans and incomplete sweeps never count) hold rows for that route, on how many capture days, and the Tokyo-time span of their captures. Days are UTC dates, the same days the comparisons group by, and the line says so.
+
+Screenshot: `docs/fares-page.png`, Playwright 1.56.1's headless Chromium, full page with all four route sections, from sweep 9 (09:04–09:13Z on 3 Nov 2026, 168 searches, 0 refused, 1,121 rows) and week scan 8 (08:27–08:29Z the same day, 251 rows). To take it again: `npm install`, then `npm run screenshot`.
 
 ## Close-out notes
 
@@ -117,3 +119,14 @@ Screenshot: `docs/fares-page.png`, Playwright 1.56.1's headless Chromium, full p
 - **Sweep numbers.** Weekly grid: 336 searches, 15.8 min, 2,293 rows, but 17 searches met a bot check, so the default is now every 14 days: 168 searches, 8.4 min, about 1,150 rows, no refusals in two runs. The store and page are in `/data/home/dan/fares-data/`.
 - **Scheduling.** Mechanism found: the skill-mirror window in `/usr/local/bin/start.sh` lines 200 to 207 (a tmux loop: run, sleep 24 hours, append to a log). `bin/daily-loop` copies that shape and is not installed. The installation step (a permanent clone at `/data/home/dan/fares` and the start.sh lines under "Daily run" above) is left for a separately authorized session on `isleofdan/agent-machine`.
 - **What the next session needs.** The daily loop installed by that agent-machine session, so days of history build up; then the next fares session (Claude Code on the machine, with the OpenRig team) can put the page into the Spine and start tactics and the reading feed. The loop has been syntax-checked only, never run as a loop.
+
+### fares-two (3 Nov 2026 UTC)
+
+- **What stands.** Built and committed on branch `claude/fares-two` by the OpenRig team (builder `dev-owner@fares-two-mixed`, checker `dev-check@fares-two-mixed`): the capture's default horizon is now 294 days, with `--horizon` to change it; each sweep's `capture.log` line names, per route and cabin, the last departure that returned results; the page has a history line in each route; the keyed sources are recorded above under "Keyed sources, recorded for later". Nothing is wired to a keyed source.
+- **Measured horizon: 294 days.** From complete grid sweeps 2, 4, 5 and 7, the latest departure that returned at least one itinerary was: Houston and Detroit (business and first) 225 days out (sweep 7: 2027-06-16), blank from 2027-06-30 to the end of the grid; Tel Aviv 211 days out (2027-06-02), blank from 2027-06-16; Barcelona 281 days out (2027-08-11), the last date in the grid, never blank. No route had an empty date inside its answered range. The latest trip any route answered returns 288 days after the sweep day (281 + 7 nights). Rounded up to the next multiple of 14 days that is 294, under the 300-day cap. On the default every-14-days grid this keeps the same 21 trips (the last returns 288 days out); it drops only the 42nd trip of the weekly grid (`--every 7`: 41 trips). It does not cut the three routes that answer only to about 225 days out, because Barcelona answers to the end.
+- **Hand run with the new default** (`bin/capture`, sweep 9, 09:04–09:13Z on 3 Nov 2026): 168 searches, 0 failed, 0 throttled, 8.5 minutes, 1,121 rows; marked complete. Its `capture.log` line: `sweep 9 done: rows=1121 queries=168 failed=0 throttled=0 minutes=8.5 every=14d horizon=294d houston/business=130 houston/first=160 detroit/business=177 detroit/first=104 tel-aviv/business=117 tel-aviv/first=75 barcelona/business=226 barcelona/first=132 last=houston/business:2027-06-16 last=houston/first:2027-06-16 last=detroit/business:2027-06-16 last=detroit/first:2027-06-16 last=tel-aviv/business:2027-06-02 last=tel-aviv/first:2027-06-02 last=barcelona/business:2027-08-11 last=barcelona/first:2027-08-11`. The last dates match the measured ones. The HTTP client printed one warning to the terminal, "h2 connection driver error: connection error detected: detected excessive load generating behavior", but no search failed. If it recurs together with refusals, it is the first sign of throttling.
+- **Re-measuring the horizon later.** Read the `last=` fields of recent `capture.log` lines. If the latest `last=` date plus 7 nights moves past 294 days after its sweep day, raise `HORIZON_DAYS` in `fares/capture.py` (up to the 300 cap). Until then, `--horizon 300` runs the old grid.
+- **History is still one Tokyo day.** The page now says so: 5 complete full sweeps on 2 capture days (UTC 2 Nov and 3 Nov), all on 3 Nov in Tokyo time. "Typical" and "lowest seen" rest on one earlier capture day.
+- **What the next session needs.** The same as fares-one: the daily loop installed by an authorized `isleofdan/agent-machine` session (see "Daily run"), so that days of history build up. Keyed sources: only Amadeus and Duffel publish a fare code. Using either needs Dan's decision to create a key, and for Duffel a look at its booking-based search fee.
+- Tests: 21 pass (16 in fares-one).
+

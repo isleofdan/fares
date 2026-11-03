@@ -10,8 +10,9 @@ Route rules live in `routes.json`; current state and decisions are in `PLAN.md`.
 
 ```sh
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt   # once
-bin/capture              # one full sweep into /data/home/dan/fares-data/fares.sqlite (about 9 min, every 14 days)
+bin/capture              # one full sweep into /data/home/dan/fares-data/fares.sqlite (about 9 min, every 14 days, trips back within 294 days)
 bin/capture --week-scan  # seven days in a row, business: which days each nonstop flies
+bin/capture --horizon 300  # the older, longer grid (default 294 days, measured; see PLAN.md, fares-two)
 bin/page                 # writes /data/home/dan/fares-data/fares.html
 bin/daily-loop           # all three, then again every 24 hours (not installed anywhere; see PLAN.md)
 .venv/bin/python -m unittest discover -s tests -t .   # tests
