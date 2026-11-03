@@ -9,7 +9,7 @@ Times are JST with UTC in brackets. Session fares-two ran on the Linux machine a
 - **Grid.** The default horizon is now 294 days (it was 300), measured from the store. `--horizon` runs any other grid by hand, for example `--horizon 300`. Each sweep's capture.log line now ends with the last departure that had results, per route and cabin (commit 3e2cb38).
 - **Page.** Each route section has a new line above the nonstop lines, for example "History: 5 complete full sweeps on 2 capture days (UTC dates, as the comparisons count them), 3 Nov 2026 00:35 Tokyo time – 3 Nov 2026 18:06 Tokyo time." The live page was re-rendered from the store and the screenshot was committed (commits 7f18f0c and 82dfa04).
 - **Keyed sources.** PLAN.md, "Fare sources tried", now has a table of Amadeus Self-Service, Duffel, Kiwi.com Tequila, SerpApi and Travelpayouts. Every cell comes from the source's own page, with its link, or says "not found". Nothing was wired; no key was made and no account opened (commits 3baa9a9 and 6c8fc29).
-- **Close-out note** "fares-two" in PLAN.md, and README "Run it" lines for `--horizon` (commit e7fe6b6).
+- **Close-out note** "fares-two" in PLAN.md, and README "Run it" lines for `--horizon` (commit e7fe6b6). The note's step 2 dates were corrected after result check 1.
 - **Team.** Rig `fares-two-mixed` (id `01M6GAAC4EEF2DFZWXN570BC2N`): builder `dev-owner@fares-two-mixed` (Claude Code, auto mode) did steps 3 to 6, and checker `dev-check@fares-two-mixed` (Codex) checked them twice.
   - Builder task row: `qitem-20261103090325-92ed33d02f86c9c2`.
   - Check 1: `qitem-20261103091427-845bf1e0`, returned on `qitem-20261103091615-b39201e8`.
@@ -74,6 +74,7 @@ Dan asked for a check every 5 to 7 minutes, with any stall recorded for this rep
 - **Rig name.** `rig-up-auto.sh` on `first-project-mixed` failed five times: "already RUNNING: 01M56TG4ZSH7BGDBAK4VQ32PSF", the stale record FACTS.md names. As earlier sessions did, I made the spec copy `~/openrig-setup/rig/fares-two-mixed.rig.yaml` (only `name:` changed) and started it with the same script. The builder came up in auto mode.
 - **Second team check.** The checker said its prose corrections needed no second round. I asked for one anyway, so the candidate pushed carries a recorded PASS.
 - **Step 2 done by the supervisor, steps 3 to 6 by the team,** as the brief says. The measured table was handed to the builder in the job text.
+- **The supervisor made one PLAN.md edit itself** after result check 1: the close-out note's step 2 dates (one sentence). It is not team work, and is named here as such.
 
 ## What the brief got wrong
 
@@ -95,6 +96,7 @@ Dan asked for a check every 5 to 7 minutes, with any stall recorded for this rep
 - **OpenRig's stalled-after-claim sweep fires at 6 minutes.** Any seat running a quiet job of 8 minutes or more (a capture, a build) trips it. The builder cleared it itself, at no cost. A job text that says "a long quiet shell is expected" may avoid it.
 - **`rig queue list` returns JSON:** grepping state words also counts nested rows. Parse it with Python and read `.state` and `.qitemId` only.
 - **`rig send` from the supervisor prints a "no sender identity" advisory.** It is harmless, because the job text starts with "This is Dan, via session …".
+- **A foreground `sleep` is refused** in this harness, so a wait on a check runs in the background or polls the status tool directly.
 
 ## Asks
 
