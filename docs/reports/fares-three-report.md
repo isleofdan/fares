@@ -1,12 +1,18 @@
 # FIELD REPORT — fares-three — 3 Nov 2026
 
-Session fares-three ran on Dan's Fly machine `agent-machine-dan` in auto mode, as a Remote Control session started from Android. The brief was the Wall card `fares`, event 2432, "START HERE — fares-three — put the fares page into the Spine".
+Session fares-three ran on Dan's Fly machine `agent-machine-dan` in auto mode, as a Remote Control session started from Android. The brief was the Wall card `fares`, event 2432, "START HERE — fares-three — put the fares page into the Spine". Neither pull request is merged or deployed, so nothing on Dan's screen has changed yet: the Spine at spine-dan.fly.dev has no /fares page until the Spine pull request is merged and deployed.
 
 **Status: NOT MERGED.** Both pull requests are open, and neither was merged by this session:
 - Spine: https://github.com/isleofdan/spine/pull/40 ("fares page: the daily fares page served at /fares")
 - fares: https://github.com/isleofdan/fares/pull/3 ("fares-three: the daily run sends the page to the Spine")
 
 Merging is Dan's typed line in a cloud session, Spine first. Nothing is live yet.
+
+**Which pull request carries which step.** The brief puts the work in two repositories and asks for two pull requests (section 10). Each pull request holds only its own repository's steps:
+- Steps 2 and 3 (the Spine takes the page; the Spine shows it at /fares, with the shortcut, docs and screenshots) are in the Spine pull request, https://github.com/isleofdan/spine/pull/40 (diff 1e26e91..4ea713f: `lib/fares.js`, `lib/brief-check.js`, `lib/install.js`, `server.js`, `public/fares.js`, `scripts/fares-page-test.mjs`, `scripts/fares-screenshots.mjs`, README.md, PLAN.md, `docs/screenshots/2026-11-03-fares-*.png`).
+- Step 4 (the daily run sends the page), step 5's screenshots and this report are in the fares pull request, https://github.com/isleofdan/fares/pull/3.
+- Step 1 (reading only) and the rest of step 5 (the local run) changed no file.
+The result check is run once against each pull request, with this same report.
 
 ## What stands
 
