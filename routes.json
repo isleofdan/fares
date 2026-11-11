@@ -8,14 +8,34 @@
       "id": "houston",
       "city": "Houston",
       "airports": ["IAH", "HOU"],
-      "rules": ["No stated carrier preference."]
+      "rules": ["No stated carrier preference."],
+      "good_price": {
+        "business": {"amount": 3900, "dan": null, "sources": [
+          {"url": "https://www.traicy.com/posts/20241125320947/", "read": "2026-11-11", "price": 3784, "note": "JAL sale 22-29 Nov 2024, Tokyo-Dallas DFW business JPY 600,000 (Texas fallback; no Houston business sale found)"},
+          {"url": "https://www.traicy.com/posts/20250624342146/", "read": "2026-11-11", "price": 3898, "note": "JAL sale 16-30 Jun 2025, Tokyo-Dallas business JPY 618,000 (Texas fallback)"},
+          {"url": "https://www.traicy.com/posts/20251118356594/", "read": "2026-11-11", "price": 3847, "note": "JAL sale 18-30 Nov 2025, Tokyo-Dallas business JPY 610,000 (Texas fallback)"},
+          {"url": "https://www.traicy.com/posts/20260522370953/", "read": "2026-11-11", "price": 4364, "note": "JAL sale 21-31 May 2026, Tokyo-Dallas business JPY 692,000 (Texas fallback)"},
+          {"url": "https://may-money.com/flight-jal-timesale-20260611/", "read": "2026-11-11", "price": 4364, "note": "JAL sale 11-21 Jun 2026, Tokyo-Dallas business JPY 692,000 (Texas fallback)"}
+        ]},
+        "first": {"amount": null, "dan": null, "sources": []}
+      }
     },
     {
       "id": "detroit",
       "city": "Detroit",
       "airports": ["DTW"],
       "rules": ["Delta's nonstop from Haneda is the ideal but not required."],
-      "preferred": {"carrier": "DL", "origin_airport": "HND", "nonstop": true}
+      "preferred": {"carrier": "DL", "origin_airport": "HND", "nonstop": true},
+      "good_price": {
+        "business": {"amount": 3550, "dan": null, "sources": [
+          {"url": "https://www.traicy.com/posts/20250624342146/", "read": "2026-11-11", "price": 3267, "note": "JAL sale 16-30 Jun 2025, Tokyo-Chicago ORD business JPY 518,000 (Midwest fallback; no Detroit business sale found)"},
+          {"url": "https://www.traicy.com/posts/20251118356594/", "read": "2026-11-11", "price": 3217, "note": "JAL sale 18-30 Nov 2025, Tokyo-Chicago business JPY 510,000 (Midwest fallback)"},
+          {"url": "https://www.traicy.com/posts/20260522370953/", "read": "2026-11-11", "price": 3734, "note": "JAL sale 21-31 May 2026, Tokyo-Chicago business JPY 592,000 (Midwest fallback)"},
+          {"url": "https://may-money.com/flight-jal-timesale-20260611/", "read": "2026-11-11", "price": 3734, "note": "JAL sale 11-21 Jun 2026, Tokyo-Chicago business JPY 592,000 (Midwest fallback)"},
+          {"url": "https://www.traicy.com/posts/20261015384933/", "read": "2026-11-11", "price": 3532, "note": "ANA sale 15-21 Oct 2026, Tokyo-Chicago business JPY 560,000 (Midwest fallback)"}
+        ]},
+        "first": {"amount": null, "dan": null, "sources": []}
+      }
     },
     {
       "id": "tel-aviv",
@@ -25,13 +45,30 @@
         "A nonstop exists and is always shown first on its own line: El Al, Tel Aviv-Narita, twice weekly, 787-8 with 20 business seats (japanaviationhub.com/?p=1221, read 2 Nov 2026); confirm the current frequency from the data source.",
         "Stopovers on the way (a Europe stop, or a Europe trip with Tel Aviv folded in) are welcome as alternatives, never as the first line."
       ],
-      "always_first": {"carrier": "LY", "name": "El Al", "origin_airport": "NRT", "nonstop": true}
+      "always_first": {"carrier": "LY", "name": "El Al", "origin_airport": "NRT", "nonstop": true},
+      "good_price": {
+        "business": {"amount": null, "dan": null, "sources": [
+          {"url": "https://www.traicy.com/posts/20260505369693/", "read": "2026-11-11", "price": 3455, "note": "Etihad sale 3-7 May 2026, Narita-Tel Aviv business JPY 547,810; one publisher only, so no line"},
+          {"url": "https://www.traicy.com/posts/20260823379881/", "read": "2026-11-11", "price": 4544, "note": "Etihad sale 23-27 Aug 2026, Narita-Tel Aviv business JPY 720,420; same publisher as above, so no line"}
+        ]},
+        "first": {"amount": null, "dan": null, "sources": []}
+      }
     },
     {
       "id": "barcelona",
       "city": "Barcelona",
       "airports": ["BCN"],
-      "rules": ["Stopovers welcome."]
+      "rules": ["Stopovers welcome."],
+      "good_price": {
+        "business": {"amount": 2450, "dan": null, "sources": [
+          {"url": "https://premium-flights.com/business-class-deal-tokyo-to-barcelona-round-trip", "read": "2026-11-11", "price": 1930, "note": "China Eastern, Haneda-Barcelona business from US$1,930, posted 20 Sep 2025"},
+          {"url": "https://www.traicy.com/posts/20260505369693/", "read": "2026-11-11", "price": 2473, "note": "Etihad sale 3-7 May 2026, Narita-Barcelona business JPY 392,160"},
+          {"url": "https://www.traicy.com/posts/20260622374338/", "read": "2026-11-11", "price": 2227, "note": "Etihad sale 19-25 Jun 2026, Narita-Barcelona business JPY 353,090"},
+          {"url": "https://www.traicy.com/posts/20260823379881/", "read": "2026-11-11", "price": 3599, "note": "Etihad sale 23-27 Aug 2026, Narita-Barcelona business JPY 570,640"},
+          {"url": "https://www.traicy.com/posts/20261108387264/", "read": "2026-11-11", "price": 3482, "note": "Etihad sale 8-15 Nov 2026, Narita-Barcelona business JPY 552,160"}
+        ]},
+        "first": {"amount": null, "dan": null, "sources": []}
+      }
     }
   ]
 }
