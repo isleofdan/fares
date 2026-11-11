@@ -350,8 +350,10 @@ def route_section(conn, profile, full, scan):
                              " AND substr(captured_at,1,10) < ?"
                              " AND sweep_id IN (SELECT id FROM sweeps WHERE completed = 1)", (rid, day)).fetchone()[0]
     if not past_days:
-        reading.append("This is the first day of history, so nothing here can be called a deal yet:"
-                       " after a few weeks each price will be marked against this route's usual level.")
+        # Only the comparisons wait for history; the verdict above can already say "a deal" from
+        # Dan's number or reported sales (session fares-verdict).
+        reading.append("This is the first day of history, so no price here can be compared with this route's own"
+                       " past yet: after a few weeks each price will be marked against this route's usual level.")
     parts.append("<p class=reading>" + html.escape(" ".join(reading)) + "</p>")
     parts.append(sources_list(profile, verdict) + "</section>")
     return "\n".join(parts)
@@ -394,7 +396,8 @@ def render(conn) -> str:
 <dt>Round trip from</dt><dd>The source lists outbound flights, each with the cheapest round-trip price that includes it. The return flight is not chosen yet.</dd>
 <dt>Nonstop</dt><dd>One flight, no change of plane. <b>One-stop</b>: one change of plane on the way out.</dd>
 <dt>via</dt><dd>The airport where you change planes, as a three-letter airport code (FRA = Frankfurt).</dd>
-<dt>Typical</dt><dd>The middle value (median) of the cheapest price found on each earlier day: half the days were cheaper, half dearer. A price well below it is a candidate deal.</dd>
+<dt>Typical</dt><dd>The middle value (median) of the cheapest price found on each earlier day: half the days were cheaper, half dearer. A price well below it is cheap for this route; whether it is a deal is the verdict.</dd>
+<dt>Verdict</dt><dd>The line at the top of each route: today's cheapest nonstop or one-stop trip against a good-price line (Dan's own number, else the lowest tenth of 60 or more days of our prices, else reported sales), read as a deal (at or under it), not a deal, or no good-price line yet.</dd>
 <dt>Week scan</dt><dd>The daily capture searches one departure every two weeks, always on the same weekday, so a separate search of seven days in a row (four weeks out, business) shows which days each nonstop flies. A nonstop that is sold out or not offered on a day searched will not show on that day.</dd>
 <dt>Mixed cabins</dt><dd>A first class search can return a trip that is first class on the long flight but business (or lower) on a connecting flight, because few short flights have a first class cabin. Such trips are marked with the cabin of each outbound flight.</dd>
 <dt>Capture</dt><dd>One run of the searches; each price is stamped with the time it was seen and where.</dd>

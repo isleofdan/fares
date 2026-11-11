@@ -229,6 +229,18 @@ class BodyAndPageTest(VerdictBase):
         hou = out[out.index("<section id=houston>"):out.index("<section id=detroit>")]
         self.assertRegex(hou, r"<p class=verdict><span class=cabin>Business</span> <b>\$[\d,]+</b> out \w{3} \d+ \w{3}: <b>(a deal|not a deal)</b>, \$[\d,]+ (under|over) the good-price line \$3,900 \(reported sales, 5 sources\)\. <span class=meta>Monday departures, 7-night trips</span></p>")
 
+    def test_a_first_day_deal_is_not_contradicted_by_the_reading(self):
+        # dev-check on 08000dd: a first-day deal from reported sales sat beside "nothing here can be
+        # called a deal yet".
+        self.day(bump=-3000)
+        out = self.page.render(self.conn())
+        hou = out[out.index("<section id=houston>"):out.index("<section id=detroit>")]
+        self.assertIn("<b>a deal</b>", hou)
+        self.assertNotIn("called a deal", out)
+        self.assertIn("This is the first day of history, so no price here can be compared with this route&#x27;s own past yet", hou)
+        self.assertNotIn("candidate deal", out)
+        self.assertIn("<dt>Verdict</dt>", out)
+
     def test_researched_sources_are_listed_with_links(self):
         self.day()
         out = self.page.render(self.conn())
