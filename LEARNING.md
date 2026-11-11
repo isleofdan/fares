@@ -143,24 +143,26 @@ Every day's cheapest first class trip from 3 Nov on was "mixed cabins" (the 2 No
 
 ### How often the cheapest was "below typical"
 
-The rule is `standing()` in `fares/page.py` on the main branch at bc541b9, which the page's price lines and the Spine strip's `against_typical` both use: the route's cheapest nonstop or one-stop today (from the day's newest complete full sweep and that day's week scan), against the *typical*, the median of each earlier capture day's cheapest of the same kind (the same nonstop airline, or any one-stop). A price under the typical by any amount is "below", otherwise "above". I replayed it for each capture day as the page saw it then (day 1 is always "first capture", so nine days count):
+The rule is `standing()` in `fares/page.py` on the main branch at bc541b9. The page's price lines and the Spine strip's `against_typical` both use it. It compares a trip with the *typical*: the median of each earlier capture day's cheapest trip of the same kind (the same nonstop airline, or any one-stop). Any price under the typical, by any amount, is "below"; otherwise it is "above".
+
+I applied it to complete full sweeps only. Each day, the trip is that day's newest full sweep's cheapest nonstop or one-stop, and the history is the earlier days' full sweeps. Day 1 (2 Nov) has no earlier day, so nine days count:
 
 | Route, cabin | Below | Above | Below by more than 3 % | Sizes of the "below" days |
 |---|---|---|---|---|
-| Houston business | 4 | 5 | 3 | $248–252 (6 %) three times, $1 once |
-| Houston first | 3 | 6 | 2 | $759, $315, $9 |
-| Detroit business | 4 | 5 | 4 | $517–619 (10–12 %) |
-| Detroit first | 3 | 6 | 2 | $759, $387, $55 |
-| Tel Aviv business | 5 | 4 | 4 | $619, $583, $210, $157; $133 (3.0 %) |
+| Houston business | 6 | 3 | 0 | $139 (2.9 %), then $1–45 |
+| Houston first | 3 | 6 | 2 | $759 (7.6 %), $315 (3.3 %), $9 |
+| Detroit business | 4 | 5 | 4 | $517–619 (9.6–12.2 %) |
+| Detroit first | 3 | 6 | 2 | $759 (6.6 %), $387 (3.5 %), $55 |
+| Tel Aviv business | 5 | 4 | 4 | $619 and $583 (13–14 %), $210, $157; $133 (3.0 %) |
 | Tel Aviv first | 6 | 3 | 0 | $6–94 (under 1.5 %) |
-| Barcelona business | 6 | 3 | 2 | $295, $288; $3–43 four times |
+| Barcelona business | 7 | 2 | 3 | $619 and $580 (16–17 %), $185 (5.1 %); $3–24 four times |
 | Barcelona first | 7 | 2 | 0 | $4–26 (under 0.5 %) |
 
 What this shows:
-- More than half the "below" days (21 of 38) are within 3 % of the typical, and on Barcelona first and Tel Aviv first every one is. A $4 difference on a $5,800 fare flips the word. The new comparison lenses (`lens_word`, same file) call anything within 3 % "near"; the old strip word does not.
-- The typical mixes trips that are not alike: Houston business compares a ZIPAIR nonstop only with earlier ZIPAIR days, which is fair, but "one-stop" compares any one-stop on any date with any other. Detroit business turned "below" on 9–11 Nov only because the cheapest became Delta's nonstop on 22–24 Dec, compared with Delta's February prices on earlier days.
-- The history it reads includes the week scans as well as the full sweeps (`history()` counts every complete sweep), so the typical is not only from the main grid.
-- The new *date* lens (`route_lenses`, same file) said "below" on 56 of 72 route-cabin-days and "near" on 16 when replayed over the same days. It picks the one date that stands best against its own past, so it leans to "below" by design, and until the fixed grid builds same-date history it compares with the same week, not the same date (its basis was "week" on all but 6 of them).
+- 26 of the 41 "below" days are within 3 % of the typical. On Houston business, Tel Aviv first and Barcelona first, every one is. A $1 or $4 difference on a $3,700 or $5,800 fare flips the word. The new comparison lenses (`lens_word`, same file) call anything within 3 % "near"; the old strip word does not.
+- The typical mixes trips that are not alike. A ZIPAIR nonstop is compared only with earlier ZIPAIR days, which is fair. But "one-stop" compares any one-stop on any date with any other. Detroit business turned "below" on 9–11 Nov only because the cheapest became Delta's nonstop on 22–24 Dec, which was compared with Delta's February prices on earlier days.
+- What the page itself showed differs a little. The page adds the same day's week scan to today's trips, and `history()` counts every complete sweep, week scans included. Replaying the page that way gives 38 "below" days, 17 of them by more than 3 %. Houston business is the main difference: three ZIPAIR week-scan fares about 6 % under the typical.
+- The new *date* lens (`route_lenses`, same file), replayed the way the page computes it, said "below" on 56 of 72 route-cabin-days and "near" on 16. It picks the one date that stands best against its own past, so it leans to "below" by design. Until the fixed grid builds same-date history, it compares with the same week, not the same date: its basis was "week" on all but 6 of the 72.
 
 ### What the history cannot show yet
 
