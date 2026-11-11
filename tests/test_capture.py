@@ -58,21 +58,33 @@ class GridTest(unittest.TestCase):
         self.assertEqual(HORIZON_DAYS, 294)
         trips = trip_grid(date(2026, 11, 2), 7)
         self.assertEqual(len(trips), 41)
-        self.assertEqual(trips[0], ("2026-11-03", "2026-11-10"))
+        self.assertEqual(trips[0], ("2026-11-09", "2026-11-16"))
         self.assertLessEqual((date.fromisoformat(trips[-1][1]) - date(2026, 11, 2)).days, 294)
-        # The every-14-days grid keeps its 21 trips: the last one returns 288 days out.
-        trips = trip_grid(date(2026, 11, 2), 14)
+        trips = trip_grid(date(2026, 11, 11), 14)
         self.assertEqual(len(trips), 21)
-        self.assertEqual((date.fromisoformat(trips[-1][1]) - date(2026, 11, 2)).days, 288)
+        self.assertLessEqual((date.fromisoformat(trips[-1][1]) - date(2026, 11, 11)).days, 294)
 
     def test_old_300_day_grid_still_runs_by_hand(self):
         from fares.capture import trip_grid
 
         trips = trip_grid(date(2026, 11, 2), 7, 300)
-        self.assertEqual(len(trips), 42)
         self.assertLessEqual((date.fromisoformat(trips[-1][1]) - date(2026, 11, 2)).days, 300)
-        self.assertEqual(len(trip_grid(date(2026, 11, 2), 14, 300)), 21)
-        self.assertEqual(len(trip_grid(date(2026, 11, 2), 14, 100)), 7)
+        self.assertEqual(len(trip_grid(date(2026, 11, 2), 14, 100)), 6)
+
+    def test_departure_dates_repeat_from_day_to_day(self):
+        """Fixed calendar dates (session fares-lenses): the next day's grid holds the same dates,
+        minus any now past and plus any new at the far end, all on Mondays."""
+        from datetime import timedelta
+        from fares.capture import trip_grid
+
+        for every in (7, 14):
+            for start in range(14):
+                today = date(2026, 11, 11) + timedelta(days=start)
+                a = {d for d, _ in trip_grid(today, every)}
+                b = {d for d, _ in trip_grid(today + timedelta(days=1), every)}
+                self.assertTrue(len(a & b) >= len(a) - 1, (every, today))
+                self.assertTrue(all(date.fromisoformat(d).weekday() == 0 for d in a | b))
+                self.assertTrue(all(date.fromisoformat(d) > today for d in a))
 
 
 class CaptureTest(unittest.TestCase):

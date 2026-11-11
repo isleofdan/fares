@@ -25,10 +25,20 @@ def now_utc() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+# Grid departures sit on fixed calendar dates, a whole number of steps after this Monday, so every
+# day's sweep searches the same departure dates as the day before (minus the one now past, plus one
+# new at the far end). That lets the page compare a date's price with the same date on earlier
+# capture days (session fares-lenses, 11 Nov 2026). Before that the grid started "tomorrow", so the
+# dates moved by one day each day and never repeated.
+GRID_EPOCH = date(2026, 11, 2)
+
+
 def trip_grid(today: date, every_days: int, horizon_days: int = HORIZON_DAYS) -> list[tuple[str, str]]:
-    """Departures every `every_days` from tomorrow, 7 nights each, returning within `horizon_days`."""
+    """Departures on the fixed dates GRID_EPOCH + n * `every_days` (the first one after today),
+    7 nights each, returning within `horizon_days`."""
     trips = []
-    dep = today + timedelta(days=1)
+    first = today + timedelta(days=1)
+    dep = first + timedelta(days=-(first - GRID_EPOCH).days % every_days)
     while (dep + timedelta(days=NIGHTS) - today).days <= horizon_days:
         trips.append((dep.isoformat(), (dep + timedelta(days=NIGHTS)).isoformat()))
         dep += timedelta(days=every_days)

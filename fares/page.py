@@ -325,6 +325,130 @@ def route_summary(conn, rid, full, scan):
     return out
 
 
+# --- comparison lenses (session fares-lenses, 11 Nov 2026) -----------------------------------
+#
+# The strip's "below/above typical" (route_summary's against_typical) compares today's cheapest
+# trip, on any departure date, with the median of earlier days' cheapest of the same kind. That
+# mixes a cheap February date one day with a dear summer date the next. Each lens below answers
+# one sharper question, for nonstop and one-stop trips in the cabin (the trips the page lists),
+# from complete full sweeps only:
+#
+#   date    Each departure date's price today against that same date's price on earlier capture
+#           days (or, while a date has no earlier day, the same Monday-to-Sunday week); the lens
+#           shows the date that stands best against its own history.
+#   month   The same, by month of departure.
+#   any     Today's cheapest on any date against earlier days' cheapest on any date (the old
+#           comparison, of the same kind of trip).
+#   lowest  Today's cheapest against the lowest price ever seen for the route and cabin.
+#
+# Within NEAR (3 %) of the typical the word is "near"; otherwise "below" or "above". A lens with no
+# earlier day says "first capture". Every cell has the same keys, so the Spine can show any lens.
+
+NEAR = 0.03
+LENSES = ("date", "month", "any", "lowest")
+
+
+def lens_word(price, typical):
+    diff = price - typical
+    if abs(diff) <= NEAR * typical:
+        return "near"
+    return "below" if diff < 0 else "above"
+
+
+def lens_cell(word, price, typical=None, depart=None, basis=None):
+    return {"word": word, "price": price, "typical": typical,
+            "diff": None if typical is None else price - typical, "depart": depart, "basis": basis}
+
+
+def week_of(iso):
+    d = date.fromisoformat(iso)
+    return (d - timedelta(days=d.weekday())).isoformat()
+
+
+def past_by_day_and_date(conn, route, cabin, before_day):
+    """{capture day: {departure date: cheapest price}} over complete full sweeps before `before_day`."""
+    out = {}
+    for r in conn.execute(
+            "SELECT substr(captured_at, 1, 10) AS day, depart_date, MIN(price) AS low FROM fares"
+            " WHERE route = ? AND cabin = ? AND stops <= 1 AND substr(captured_at, 1, 10) < ?"
+            " AND sweep_id IN (SELECT id FROM sweeps WHERE completed = 1 AND grid_step_days > 1)"
+            " GROUP BY day, depart_date", (route, cabin, before_day)):
+        out.setdefault(r["day"], {})[r["depart_date"]] = r["low"]
+    return out
+
+
+def grouped_lens(today_lows, past, key, fallback_key=None):
+    """today_lows: {departure date: price}. For each group of dates (`key`), today's cheapest in it
+    against the median over earlier days of each day's cheapest in it; the group whose price stands
+    lowest against its typical wins. `fallback_key` is tried for a group with no earlier day."""
+    best = None
+    groups = {}
+    for d, p in today_lows.items():
+        g = key(d)
+        if g not in groups or p < groups[g][1]:
+            groups[g] = (d, p)
+    for g, (d, p) in groups.items():
+        basis = None
+        for k, name in ((key, None), (fallback_key, "week")):
+            if k is None:
+                continue
+            lows = [min(v for dd, v in dates.items() if k(dd) == k(d))
+                    for dates in past.values() if any(k(dd) == k(d) for dd in dates)]
+            if lows:
+                basis = name
+                break
+        if not lows:
+            continue
+        typical = int(statistics.median(lows))
+        cell = lens_cell(lens_word(p, typical), p, typical, d, basis)
+        if best is None or p / typical < best["price"] / best["typical"]:
+            best = cell
+    return best
+
+
+def route_lenses(conn, rid, full, scan):
+    """The four lenses for one route, each {business: cell or None, first: cell or None}."""
+    day = history_day(full)
+    out = {lens: {} for lens in LENSES}
+    listed = [r for r in today_rows(conn, rid, full, scan) if r["stops"] <= 1]
+    for cabin in CABINS:
+        rows = [r for r in listed if r["cabin"] == cabin]
+        best = cheapest(rows)
+        if best is None:
+            for lens in LENSES:
+                out[lens][cabin] = None
+            continue
+        grid_rows = [r for r in rows if r["sweep_id"] == full["id"]]
+        today_lows = {}
+        for r in grid_rows:
+            today_lows[r["depart_date"]] = min(r["price"], today_lows.get(r["depart_date"], r["price"]))
+        past = past_by_day_and_date(conn, rid, cabin, day)
+        first = lens_cell("first capture", best["price"], None, best["depart_date"], None)
+
+        if today_lows and past:
+            out["date"][cabin] = grouped_lens(today_lows, past, lambda d: d, week_of) or first
+            month = grouped_lens(today_lows, past, lambda d: d[:7])
+            out["month"][cabin] = dict(month, depart=month["depart"][:7], basis="month") if month else first
+        else:
+            out["date"][cabin] = out["month"][cabin] = first
+        if out["date"][cabin] is not first and out["date"][cabin]["basis"] is None:
+            out["date"][cabin]["basis"] = "date"
+
+        kind = "nonstop" if best["stops"] == 0 else "one-stop"
+        s = standing(best["price"], history(conn, rid, cabin, kind, best["carrier_codes"], day))
+        out["any"][cabin] = (lens_cell(lens_word(best["price"], s["typical"]), best["price"], s["typical"],
+                                       best["depart_date"], "any") if s else first)
+
+        lows = [v for dates in past.values() for v in dates.values()]
+        if lows:
+            lowest = min(lows)
+            word = "below" if best["price"] < lowest else lens_word(best["price"], lowest)
+            out["lowest"][cabin] = lens_cell(word, best["price"], lowest, best["depart_date"], "lowest")
+        else:
+            out["lowest"][cabin] = first
+    return out
+
+
 def spine_body(conn, page_html, rendered_at):
     """The body POST /internal/fares/page takes (isleofdan/spine, lib/fares.js); None when there is
     no complete full sweep yet, since the Spine needs one's id."""
@@ -332,7 +456,8 @@ def spine_body(conn, page_html, rendered_at):
     if full is None:
         return None
     return {"rendered_at": rendered_at, "sweep": full["id"], "html": page_html,
-            "summary": [route_summary(conn, p["id"], full, scan) for p in config.load_profiles()["routes"]]}
+            "summary": [dict(route_summary(conn, p["id"], full, scan), lenses=route_lenses(conn, p["id"], full, scan))
+                        for p in config.load_profiles()["routes"]]}
 
 
 def one_line(text) -> str:
