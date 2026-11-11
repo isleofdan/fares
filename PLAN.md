@@ -21,6 +21,8 @@ To be addressed, in this order:
 
 This issue stays open until a note on this card records the decision. The brief "START HERE — fares-verdict" (event 2574, brief check PASS, job 20261111-142632-245c09) writes it into PLAN.md under "Open issues".
 
+Also part of this issue (Dan, 11 Nov 2026, session fares-verdict): today's cheapest fare can come from the week scan and depart on another weekday, while the verdict's scope still names the grid ("Monday departures, 7-night trips"); the scope stays built from the grid code, and the verdict shows the fare's real departure date beside it.
+
 ## Decisions
 
 - Persistent place for the store, the page, the logs and the loop log: `/data/home/dan/fares-data/` (outside the repository; per FACTS.md anything that must survive a deploy lives under `/data/home/dan`).
