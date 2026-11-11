@@ -180,5 +180,5 @@ Screenshot: `docs/fares-page.png`, Playwright 1.56.1's headless Chromium, full p
 ### fares-verdict (11 Nov 2026 UTC, OpenRig team on Dan's machine, job 2 of 2 from Dan's session fares-verdict)
 
 - **What changed.** `routes.json` carries `good_price` per route and cabin (amounts and sources copied from the session's research file). `fares/page.py`: `good_price()`, `route_verdict()` and `scope_text()`; `spine_body` sends `verdict` with each route; each page section opens with the business and first verdict lines and, when a researched line is in use, ends with its sources as links. Lens cells carry `days` (earlier capture days compared with; null for "first capture"), and the date, month and any lenses say `early` below 7 earlier days (`EARLY_DAYS`; the lowest lens is exempt). Job 1 (isleofdan/spine, branch `claude/fares-verdict`) accepts and draws both.
-- Tests: 66 pass (42 before; 24 new in `tests/test_verdict.py`).
+- Tests: 67 pass (42 before; 25 new in `tests/test_verdict.py`). dev-check's first round on 08000dd found the first-day reading ("nothing here can be called a deal yet") contradicting a deal from reported sales; the reading now speaks only of the missing comparison, and the glossary names the verdict.
 
