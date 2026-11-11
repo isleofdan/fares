@@ -128,7 +128,12 @@ class SummaryTest(Base):
         self.assertEqual(b["rendered_at"], "2026-11-03T10:00:00Z")
         self.assertEqual([s["route"] for s in b["summary"]], ROUTES)
         for s in b["summary"]:
-            self.assertEqual(sorted(s), ["against_typical", "cheapest", "days", "last_run", "route", "sweeps"])
+            self.assertEqual(sorted(s), ["against_typical", "cheapest", "days", "last_run", "lenses", "route", "sweeps"])
+            self.assertEqual(sorted(s["lenses"]), ["any", "date", "lowest", "month"])
+            for lens in s["lenses"].values():
+                for cabin in ("business", "first"):
+                    self.assertEqual(lens[cabin]["word"], "first capture")
+                    self.assertEqual(lens[cabin]["price"], s["cheapest"][cabin])
             for cabin in ("business", "first"):
                 self.assertEqual(s["cheapest"][cabin], min(self.shown_prices(b["html"], s["route"], cabin)))
                 self.assertEqual(s["against_typical"][cabin], "first capture")
@@ -332,3 +337,53 @@ class PushTest(Base):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LensTest(Base):
+    """The four comparison lenses sent with each route (session fares-lenses)."""
+
+    def two_days(self, bump):
+        self.day(when="2026-11-01T10:00:00Z")
+        self.day(bump=bump)
+        return self.body()["summary"]
+
+    def test_a_drop_reads_below_on_every_lens(self):
+        for s in self.two_days(-500):
+            L = s["lenses"]
+            for cabin in ("business", "first"):
+                d = L["date"][cabin]
+                self.assertEqual((d["word"], d["basis"]), ("below", "date"), (s["route"], cabin, d))
+                self.assertEqual(d["diff"], d["price"] - d["typical"])
+                self.assertEqual(len(d["depart"]), 10)
+                m = L["month"][cabin]
+                self.assertEqual((m["word"], m["basis"], m["depart"]), ("below", "month", d["depart"][:7]))
+                self.assertEqual(L["any"][cabin]["word"], "below")
+                self.assertEqual(L["lowest"][cabin]["word"], "below")
+                self.assertEqual(L["lowest"][cabin]["price"], s["cheapest"][cabin])
+
+    def test_a_few_dollars_read_near(self):
+        for s in self.two_days(10):
+            for lens in ("date", "month", "any", "lowest"):
+                for cabin in ("business", "first"):
+                    self.assertEqual(s["lenses"][lens][cabin]["word"], "near", (s["route"], lens, cabin))
+            # The old words stay as they were, for the Spine strip until it reads the lenses.
+            self.assertEqual(s["against_typical"], {"business": "above", "first": "above"})
+
+    def test_a_rise_reads_above(self):
+        for s in self.two_days(500):
+            for lens in ("date", "month", "any", "lowest"):
+                self.assertEqual(s["lenses"][lens]["business"]["word"], "above", (s["route"], lens))
+                self.assertGreater(s["lenses"][lens]["business"]["diff"], 0)
+
+    def test_a_date_with_no_history_uses_its_week(self):
+        from fares.page import grouped_lens, week_of
+        cell = grouped_lens({"2026-11-16": 3800}, {"2026-11-01": {"2026-11-17": 4000}}, lambda d: d, week_of)
+        self.assertEqual((cell["word"], cell["typical"], cell["basis"], cell["depart"]), ("below", 4000, "week", "2026-11-16"))
+        self.assertIsNone(grouped_lens({"2026-11-16": 3800}, {"2026-11-01": {"2026-12-30": 4000}}, lambda d: d, week_of))
+
+    def test_the_date_that_stands_best_is_shown(self):
+        from fares.page import grouped_lens
+        past = {"2026-11-01": {"A": 2900, "B": 6000}, "2026-11-02": {"A": 2900, "B": 6000}}
+        cell = grouped_lens({"A": 3000, "B": 5000}, past, lambda d: d)
+        self.assertEqual((cell["depart"], cell["word"], cell["typical"], cell["diff"]), ("B", "below", 6000, -1000))
+
