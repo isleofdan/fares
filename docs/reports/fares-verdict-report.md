@@ -1,6 +1,6 @@
 # FIELD REPORT — fares-verdict — 2026-11-13
 
-Session fares-verdict ran on Dan's Fly machine `agent-machine-dan` in auto mode, as a Remote Control session started from the Claude Code project thread. It ran in two parts. The first supervising session (11 Nov 2026) did the research and had the OpenRig team build and check both jobs, then stopped at a permission prompt before pushing. This restarted session (13 Nov 2026) took over from that work. It found one more defect in the end to end, had the team fix it and check the fix, and then pushed, opened the pull requests and closed out. The brief is the card `fares`, event 2574, "START HERE — fares-verdict".
+Session fares-verdict ran on Dan's Fly machine `agent-machine-dan` in auto mode, as a Remote Control session started from the Claude Code project thread. It ran in two parts. The first supervising session (11 Nov 2026) did the research and had the OpenRig team build and check both jobs, then stopped at a permission prompt before pushing. This restarted session (13 Nov 2026) took over from that work. It found one more defect in the end to end, had the team fix it and check the fix, and then pushed, opened the pull requests and closed out. The brief is the card `fares`, event 2574, "START HERE — fares-verdict". **Nothing on Dan's screen has changed yet:** both pull requests are unmerged, the live Spine at https://spine-dan.fly.dev/fares runs the old code, and so does the machine's fares copy `~/fares`.
 
 **Status: NOT MERGED.** Both pull requests are open, and this session merged neither:
 - Spine: https://github.com/isleofdan/spine/pull/44 (merge first, then deploy)
@@ -16,11 +16,13 @@ Nothing is live yet. The thread that started this session merges them on Dan's t
   - Job 1, the Spine: owner row `qitem-20261111145307-e4bd8e51be536c2a`.
   - Job 2, fares: owner row `qitem-20261111145825-3efeeed9fbaf492f`.
   - The new-low fix (this session): owner row `qitem-20261113124319-7e13ed2be8496016`.
+  - The scope fix (this session, from the result check): owner row `qitem-20261113125324-c328ae3cd2e38bc9`.
   - The checker rounds are listed under "Checks".
-- **Spine, branch `claude/fares-verdict` (94d4240, c77c2e2, 8eacfd6, 78c60d8, 622c580; spine#44):**
+  - **The team is stopped.** `rig down fares-verdict-mixed --snapshot` on 13 Nov 2026 printed snapshot `01M7AFQA1GCZB8V55YX3PXWNFW` for rig id `01M75HGF33Y48PRFJK0YXWMMSV` and the restore line `rig up 'fares-verdict-mixed' --existing` (only to continue this job). `rig ps` then showed 0 rigs running. I recorded all three in `/data/home/dan/FACTS.md` (section "OpenRig team is the default", the latest-snapshot sentence), ahead of fares-three's.
+- **Spine, branch `claude/fares-verdict` (94d4240, c77c2e2, 8eacfd6, 78c60d8, 622c580, b482852; spine#44):**
   - **The route.** `lib/fares.js` accepts an optional `verdict` per route: `business` and `first`, each `{word, price, depart, line, gap, basis, scope}`, with words `deal`, `not a deal` and `no line yet`. It also accepts the lens word `early`. It refuses calendar-invalid dates and a `gap` that is not `price − line`.
   - **The route box.** Each box on /fares leads with the verdict: price and departure date, "a deal", "not a deal" or "no good-price line yet", the line and the dollar gap, and the scope in small text. The lens tabs sit under it. Each lens says what it compares with and over how many days, and `early` reads "too early to say". A body with no `verdict` draws as before.
-  - **Card notes.** The hook that files fare notes on the card is `fileNoteworthy()` / `noteworthy()` in `lib/fares.js`. It now files only when a verdict turns to `deal` or on a new lowest ever by more than 3%. A new low the page before already reported is not filed again (622c580). The "below typical" notes stop.
+  - **Card notes.** The hook that files fare notes on the card is `fileNoteworthy()` / `noteworthy()` in `lib/fares.js`. It now files only when a verdict turns to `deal` or on a new lowest ever by more than 3%. A new low the page before already reported is not filed again (622c580). Every note names the search scope: the cabin's own verdict scope, else that route's other cabin, else any verdict on the page; a page with no verdict at all (an older fares producer) files no notes (b482852, from the result check's finding). The "below typical" notes stop.
 - **fares, branch `claude/fares-verdict` (08000dd, 1c4a017, 95cea28, dc7cffe, 1bc8b6c and this report; fares#6):**
   - **`routes.json`.** `good_price` per route and cabin, filled from step 1, with `dan` null.
   - **`fares/page.py`.** `good_price()` picks the line: Dan's number, then the lowest tenth of 60 or more own capture days, then the researched amount, then none. `route_verdict()` gives the word. `scope_text()` reads the weekday and the nights from `GRID_EPOCH` and `NIGHTS` in `fares/capture.py`.
@@ -32,22 +34,26 @@ Nothing is live yet. The thread that started this session merges them on Dan's t
   | Repository | Before (main) | After (branch) |
   |---|---|---|
   | fares, `.venv/bin/python -m unittest discover -s tests -t .` | 42 OK | 67 OK |
-  | Spine, `node scripts/fares-verdict-test.mjs` | did not exist | 71 checks, 0 failed |
+  | Spine, `node scripts/fares-verdict-test.mjs` | did not exist | 74 checks, 0 failed |
   | Spine, `node scripts/fares-page-test.mjs` | 52, 0 failed | 56, 0 failed |
   | Spine, `node scripts/fares-alerts-test.mjs` | 20, 0 failed | 14, 0 failed |
   | Spine, `node scripts/fares-lenses-test.mjs` | 24, 0 failed | 22, 0 failed |
 
-  The Spine's documented test commands are listed in its README, section "Tests" (line 167 onward). It has no `npm test`. On the Spine side, the alerts and lens checks were rewritten for the new note rule and the new route-box ids. That is why those two counts fell, while the new verdict file adds 71.
+  The Spine's documented test commands are listed in its README, section "Tests" (line 167 onward). It has no `npm test`. On the Spine side, the alerts and lens checks were rewritten for the new note rule and the new route-box ids. That is why those two counts fell, while the new verdict file adds 74. Spine fares checks in all: 96 before, 166 after.
 - **The prerequisite was in place (environment check 3).**
   - fares#4 is MERGED (bc541b9): `GRID_EPOCH` is in `fares/capture.py` and `route_lenses` in `fares/page.py` on main.
   - spine#43 is MERGED (1c41a4d): `lenses` is accepted in `lib/fares.js` on main.
   - Both branches are based on those commits.
-- **How the page reaches the Spine today.** The daily loop sends it. `~/fares-data/loop.log` ends with `sent page to http://spine-dan.internal:8080/internal/fares/page: sweep 31, 4 routes`, and the machine copy `~/fares` is at bc541b9. The fares README is correct, and so is FACTS.md ("Fares daily run": "Since fares #3 the page step also sends …"). Two things are out of date:
-  - The brief's premise that FACTS.md says the loop sends nothing.
-  - The header comment in `bin/daily-loop`, which still says "Prepared only: nothing registers or starts this". In fact `start.sh` runs it in tmux window `fares`. This session left that comment as it is (the daily loop is out of scope). A later fares session can fix it.
+- **How the page reaches the Spine today.** The daily loop sends it. `~/fares-data/loop.log` ends with `sent page to http://spine-dan.internal:8080/internal/fares/page: sweep 31, 4 routes`, and the machine copy `~/fares` is at bc541b9. The fares README is correct, and so is FACTS.md ("Fares daily run": "Since fares #3 the page step also sends …"). What is out of date is under "What the brief got wrong".
 - **Out of scope, as the brief says.** The card holds briefs for the neighbouring work: "START HERE — fares-tactics" (event 2579) and "START HERE — fares-feed" (event 2580, the reading feed). Keyed fare sources are recorded in fares PLAN.md, "Keyed sources, recorded for later (fares-two)". No brief for brokers was found on the card.
 - **The store.** The live store was copied read-only, through the sqlite backup API, into `~/work/fares-verdict/e2e2/fares-data/` (sweep 31). The first session's copy is `~/work/fares-verdict/store-copy.sqlite`. The live store and `~/fares` were not written.
 - **Permission mode.** Auto mode (the session's system notice). Every step could run in it.
+
+## What the brief got wrong
+
+- **"FACTS.md is reported to say the machine's daily loop sends nothing."** It does not. FACTS.md, "Fares daily run", says the page step sends the page to the Spine since fares #3, and `~/fares-data/loop.log` confirms it (`sent page to http://spine-dan.internal:8080/internal/fares/page: sweep 31, 4 routes`). FACTS.md needed no change for this.
+- **The one document that really is out of date** is the header comment in `bin/daily-loop` in isleofdan/fares: "Prepared only: nothing registers or starts this". In fact `start.sh` runs it in tmux window `fares`. This session left it as it is, because the daily loop is out of scope (section 8). A later fares session can fix it.
+- **The merge session.** The brief asks for a merge-session brief and a launch block. The relay that restarted this session overrides that: the thread that started it merges (see "Deliberate divergences").
 
 ## The good-price table (step 1)
 
@@ -94,7 +100,7 @@ Each source's link is in `routes.json` and in each route's list on the page. JAL
   | 2 | Test copy of `routes.json` with the Barcelona business line raised to $4,000 | 2: "Barcelona business $3,598 out Mon 30 Nov 2026 is a deal (good-price line $4,000); Monday departures, 7-night trips" |
   | 3 | That identical deal body again | still 2 |
 
-  So the second send of the sequence filed exactly one note, and the third filed none. Before the fix (622c580), the first run of this sequence (temporary database `e2e2`) re-filed the Tel Aviv new-low item on every send, including send 3. That was the defect the team fixed today.
+  So the second send of the sequence filed exactly one note, and the third filed none. This sequence ran on 622c580. b482852 changes only notes for routes whose own verdict is missing and pages with no verdict at all; every route in this body carries a verdict, and the checker's replay of b482852 (row 7 under "Checks") repeated the once-only result. Before the fix (622c580), the first run of this sequence (temporary database `e2e2`) re-filed the Tel Aviv new-low item on every send, including send 3. That was the defect the team fixed today.
 - **Screenshots.**
   - **Setup.** The fares repository's screenshot setup is `tools/screenshot.mjs` (`npm run screenshot`). It shoots the fares page file only, so the local /fares, which needs a sign-in, was shot with the same Playwright install and a sign-in step.
   - **Files.** `docs/reports/fares-verdict/spine-fares-desktop.png` (1200 px), `spine-fares-phone.png` (412 px) and `spine-fares-phone-lowest-tab.png` (412 px, after clicking "Lowest seen").
@@ -126,8 +132,11 @@ States shot: populated at desktop and phone, and after the frequent action (tab 
 | 4 | Team check, fares (+ Spine test-only 78c60d8) | `qitem-20261111151046-c7f9a3d9`, verdict on `qitem-20261111151310-d9a72275` | 1c4a017 | FINDINGS (1 × P2) | The first-day reading said nothing could be a deal, against a researched-line deal. Text and glossary fixed, with a regression test (95cea28, dc7cffe) |
 | 5 | Team check, fares | `qitem-20261111151356-d89c0647`, verdict on `qitem-20261111151438-c18a2b80` | dc7cffe | PASS | — |
 | 6 | Team check, Spine (this session) | `qitem-20261113124526-0c4fde614fc1385d`, verdict on `qitem-20261113124643-4175d4b0` | 622c580 | PASS (163 checks, plus a replay through the private listener) | — (the fix for this session's end-to-end finding) |
+| 7 | Team check, Spine (this session) | `qitem-20261113125510-3921c3d5df131f63`, verdict on `qitem-20261113125617-cb30a896` | b482852 | PASS (166 checks, plus five replay scenarios through the private listener) | — (the fix for result check 8's finding 1) |
+| 8 | Result check, spine#44, on report event 2601 | job 20261113-125047-5a3f14 | 622c580 + report 2601 | FINDINGS (4) | 1: a new-low note dropped the scope when the route had no verdict; fixed in b482852 (row 7). 2: FACTS.md lacked this team's snapshot; team stopped and FACTS.md updated. 3: the first paragraph did not say nothing changed on Dan's screen; added. 4: the report claimed result checks passed before they ran; the claim is removed and this table lists them |
+| 9 | Result check, fares#6, on report event 2601 | job 20261113-125047-7c6112 | 1bc8b6c + report 2601 | FINDINGS (4) | 1: no "What the brief got wrong" section; added. 2, 3, 4: as row 8's 3, 2 and 4 |
 
-Result checks of this report against spine#44 and fares#6 follow on the card (checker:codex events). The checker's evidence is in `~/.openrig/shared-docs/rigs/fares-verdict-mixed/state/dev/qa-<sha>/review.txt`. Seat prompts that this session answered for the team: 0.
+**The result-check tools.** `check_result` takes the card, one pull request URL, and the report and brief (as text or as card event ids). It answers at once with a job id, and the checker (Codex on this machine) files its verdict on the card as a `checker:codex` event. `result_check_status` takes that job id and returns state (queued, running, done or failed), verdict (PASS or FINDINGS) and the numbered findings. Only a done PASS counts. The re-checks of this corrected report, one per pull request, are filed on the card after it. The checker's evidence is in `~/.openrig/shared-docs/rigs/fares-verdict-mixed/state/dev/qa-<sha>/review.txt`. Seat prompts that this session answered for the team: 0.
 
 ## Deliberate divergences from the brief
 
@@ -154,9 +163,12 @@ None. The merge is the thread's, on Dan's typed yes there.
 - **Safety check on `rm -f $R/*.png`.** It was refused because `$R` could expand to root. A literal path, or `"${R:?}"`, passes.
 - **`pkill -f <pattern>` killed my own shell (exit 144),** because the pattern was in the command line itself. Kill by the pid that `ss -ltnp` shows.
 
+- **A wait matched an old file.** My first wait for the checker's verdict on b482852 counted folders and read the newest `review.txt`, so it fired on the old 622c580 PASS. Waiting on the exact candidate's own file (`qa-b482852/review.txt`) fixed it.
+- **A placeholder note went to the card (event 2600).** I filed the card fields with a placeholder note instead of the report, and corrected it with the next note (event 2601). A card write's note is the report text itself, never a pointer to be filled in later.
+
 ## Closing message to Dan
 
 fares-verdict is done: each route now has a good-price line and one plain verdict, and the card gets a note only for a real deal or a new low.
 Today Houston business at $3,731 is a deal (its line is $3,900); Detroit and Barcelona business are not; the other five have no line yet.
-Tests: fares 42 → 67, Spine fares checks 96 → 163; the team's checker passed both branches, and the result checks passed.
+Tests: fares 42 → 67, Spine fares checks 96 → 166; the team's checker passed every round, and the result checks of this final report are on the card fares.
 NOT MERGED: two pull requests wait for your yes, the Spine first: https://github.com/isleofdan/spine/pull/44, then https://github.com/isleofdan/fares/pull/6.
