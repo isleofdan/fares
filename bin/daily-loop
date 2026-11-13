@@ -6,7 +6,7 @@
 # listener (bin/page; one line in the log either way, and a Spine that does not answer never stops
 # the loop); nothing else is sent anywhere.
 #
-# Prepared only: nothing registers or starts this. The line start.sh would need is in PLAN.md.
+# start.sh runs this at every boot in tmux window `fares` (agent-machine; FACTS.md, "Fares daily run").
 # By hand, in a tmux window: bin/daily-loop
 cd "$(dirname "$0")/.." || exit 1
 DATA="${FARES_DATA:-/data/home/dan/fares-data}"
