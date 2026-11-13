@@ -16,10 +16,11 @@ import urllib.error
 import urllib.request
 from datetime import date, datetime, timedelta, timezone
 
-from . import config, store
+from . import capture, config, store
 
 TOKYO = timezone(timedelta(hours=9))
 WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 CABINS = ("business", "first")
 
 
@@ -160,6 +161,106 @@ def history_day(full):
     return full["started_at"][:10] if full else "9999"
 
 
+# --- the good-price line and the verdict (session fares-verdict, 11 Nov 2026) ----------------
+#
+# Each route and cabin gets a line below which a fare counts as a deal, from the first of these
+# that exists (PLAN.md, "Decision: the good-price line"):
+#   1. Dan's own number (routes.json good_price.<cabin>.dan);
+#   2. once there are OWN_DAYS or more capture days of the same kind of trip (that nonstop
+#      carrier, or one-stop), the lowest tenth of our own daily cheapest prices (history());
+#   3. the researched line from reported sales (good_price.<cabin>.amount, with its sources);
+#   4. none.
+# The verdict sets today's cheapest nonstop or one-stop trip (route_summary's row) against it.
+
+OWN_DAYS = 60
+
+
+def lowest_tenth(lows):
+    """The 10th percentile of the daily cheapest prices, by the nearest-rank method: sorted
+    ascending, the value at rank ceil(n / 10) counting from 1 (the 6th lowest of 60 days). It is
+    always one of our own prices, never interpolated between two."""
+    ordered = sorted(lows)
+    return ordered[max(1, -(-len(ordered) // 10)) - 1]
+
+
+def good_price(conn, profile, cabin, kind, carrier, before_day):
+    """The good-price line for a route and cabin and the kind of trip today's cheapest is:
+    (amount, basis in words), or (None, None) when there is no line."""
+    gp = (profile.get("good_price") or {}).get(cabin) or {}
+    if gp.get("dan") is not None:
+        return int(round(gp["dan"])), "Dan's own number"
+    lows = [r["low"] for r in history(conn, profile["id"], cabin, kind, carrier, before_day)]
+    if len(lows) >= OWN_DAYS:
+        return lowest_tenth(lows), f"lowest tenth of {len(lows)} days of our prices"
+    if gp.get("amount") is not None:
+        n = len(gp.get("sources") or [])
+        return gp["amount"], f"reported sales, {n} source{'s' if n != 1 else ''}"
+    return None, None
+
+
+def is_researched(basis):
+    return bool(basis) and basis.startswith("reported sales")
+
+
+def scope_text():
+    """What the daily search covers, from the grid itself (fares/capture.py): the weekday every
+    departure falls on and the trip length. See PLAN.md, "Open issues"."""
+    return f"{WEEKDAY_NAMES[capture.GRID_EPOCH.weekday()]} departures, {capture.NIGHTS}-night trips"
+
+
+def route_verdict(conn, profile, full, scan):
+    """{business, first}: each None when no nonstop or one-stop trip was found today, else
+    {word, price, depart, line, gap, basis, scope}; word "deal" at or under the line, "not a deal"
+    above it, "no line yet" without one; gap = price - line."""
+    rid = profile["id"]
+    today = [r for r in today_rows(conn, rid, full, scan) if r["stops"] <= 1]
+    day = history_day(full)
+    out = {}
+    for cabin in CABINS:
+        best = cheapest([r for r in today if r["cabin"] == cabin])
+        if best is None:
+            out[cabin] = None
+            continue
+        kind = "nonstop" if best["stops"] == 0 else "one-stop"
+        line, basis = good_price(conn, profile, cabin, kind, best["carrier_codes"], day)
+        price = best["price"]
+        word = "no line yet" if line is None else ("deal" if price <= line else "not a deal")
+        out[cabin] = {"word": word, "price": price, "depart": best["depart_date"], "line": line,
+                      "gap": None if line is None else price - line, "basis": basis, "scope": scope_text()}
+    return out
+
+
+def verdict_line(cabin, v):
+    """One cabin's verdict as a line on the page, every piece escaped."""
+    head = f"<span class=cabin>{cabin.title()}</span> "
+    if v is None:
+        return f"<p class=verdict>{head}none found in this capture</p>"
+    if v["word"] == "no line yet":
+        said = "<b>no good-price line yet</b>"
+    else:
+        gap = v["gap"]
+        where = (f"{money(-gap)} under" if gap < 0 else f"{money(gap)} over" if gap > 0 else "right at")
+        said = (f"<b>{html.escape('a deal' if v['word'] == 'deal' else 'not a deal')}</b>,"
+                f" {where} the good-price line {money(v['line'])} ({html.escape(v['basis'])})")
+    return (f"<p class=verdict>{head}<b>{money(v['price'])}</b> out {html.escape(short_date(v['depart']))}: {said}."
+            f" <span class=meta>{html.escape(v['scope'])}</span></p>")
+
+
+def sources_list(profile, verdict):
+    """The reported sales behind each researched line in use, as links; empty when none."""
+    items = []
+    for cabin in CABINS:
+        v = verdict.get(cabin)
+        if not v or not is_researched(v["basis"]):
+            continue
+        for src in ((profile.get("good_price") or {}).get(cabin) or {}).get("sources") or []:
+            items.append(f"<li>{cabin.title()}: <a href=\"{html.escape(src['url'], quote=True)}\">{html.escape(src['note'])}</a>"
+                         f" ({money(src['price'])}, read {html.escape(src['read'])})</li>")
+    if not items:
+        return ""
+    return "<details class=sources><summary>Where the good-price line comes from</summary><ul>" + "".join(items) + "</ul></details>"
+
+
 def route_section(conn, profile, full, scan):
     rid = profile["id"]
     today = today_rows(conn, rid, full, scan)
@@ -172,7 +273,9 @@ def route_section(conn, profile, full, scan):
     if first_carrier and first_carrier not in nonstop_carriers:
         nonstop_carriers.insert(0, first_carrier)
 
+    verdict = route_verdict(conn, profile, full, scan)
     parts = [f"<section id={rid}><h2>Tokyo – {html.escape(profile['city'])}</h2>",
+             *(verdict_line(c, verdict[c]) for c in CABINS),
              "<p class=rules>Rules: " + " ".join(html.escape(r) for r in profile["rules"]) + "</p>",
              history_line(conn, rid)]
 
@@ -247,9 +350,12 @@ def route_section(conn, profile, full, scan):
                              " AND substr(captured_at,1,10) < ?"
                              " AND sweep_id IN (SELECT id FROM sweeps WHERE completed = 1)", (rid, day)).fetchone()[0]
     if not past_days:
-        reading.append("This is the first day of history, so nothing here can be called a deal yet:"
-                       " after a few weeks each price will be marked against this route's usual level.")
-    parts.append("<p class=reading>" + html.escape(" ".join(reading)) + "</p></section>")
+        # Only the comparisons wait for history; the verdict above can already say "a deal" from
+        # Dan's number or reported sales (session fares-verdict).
+        reading.append("This is the first day of history, so no price here can be compared with this route's own"
+                       " past yet: after a few weeks each price will be marked against this route's usual level.")
+    parts.append("<p class=reading>" + html.escape(" ".join(reading)) + "</p>")
+    parts.append(sources_list(profile, verdict) + "</section>")
     return "\n".join(parts)
 
 
@@ -266,6 +372,8 @@ ul { padding-left:1.2rem; margin:.2rem 0; } li { margin:.35rem 0; }
 .cabin { display:inline-block; min-width:5.5rem; font-weight:600; }
 .rules, .intro { color:var(--muted); font-size:.9rem; }
 .history { font-size:.9rem; margin:.3rem 0; }
+.verdict { margin:.35rem 0; font-size:1.02rem; }
+.sources { font-size:.85rem; margin-top:.6rem; } .sources li { margin:.2rem 0; }
 .reading { background:color-mix(in srgb, var(--accent) 8%, transparent); padding:.7rem .9rem; border-radius:6px; }
 dl { font-size:.9rem; } dt { font-weight:600; } dd { margin:0 0 .4rem 0; color:var(--muted); }
 """
@@ -288,7 +396,8 @@ def render(conn) -> str:
 <dt>Round trip from</dt><dd>The source lists outbound flights, each with the cheapest round-trip price that includes it. The return flight is not chosen yet.</dd>
 <dt>Nonstop</dt><dd>One flight, no change of plane. <b>One-stop</b>: one change of plane on the way out.</dd>
 <dt>via</dt><dd>The airport where you change planes, as a three-letter airport code (FRA = Frankfurt).</dd>
-<dt>Typical</dt><dd>The middle value (median) of the cheapest price found on each earlier day: half the days were cheaper, half dearer. A price well below it is a candidate deal.</dd>
+<dt>Typical</dt><dd>The middle value (median) of the cheapest price found on each earlier day: half the days were cheaper, half dearer. A price well below it is cheap for this route; whether it is a deal is the verdict.</dd>
+<dt>Verdict</dt><dd>The line at the top of each route: today's cheapest nonstop or one-stop trip against a good-price line (Dan's own number, else the lowest tenth of 60 or more days of our prices, else reported sales), read as a deal (at or under it), not a deal, or no good-price line yet.</dd>
 <dt>Week scan</dt><dd>The daily capture searches one departure every two weeks, always on the same weekday, so a separate search of seven days in a row (four weeks out, business) shows which days each nonstop flies. A nonstop that is sold out or not offered on a day searched will not show on that day.</dd>
 <dt>Mixed cabins</dt><dd>A first class search can return a trip that is first class on the long flight but business (or lower) on a connecting flight, because few short flights have a first class cabin. Such trips are marked with the cabin of each outbound flight.</dd>
 <dt>Capture</dt><dd>One run of the searches; each price is stamped with the time it was seen and where.</dd>
@@ -341,11 +450,14 @@ def route_summary(conn, rid, full, scan):
 #           comparison, of the same kind of trip).
 #   lowest  Today's cheapest against the lowest price ever seen for the route and cabin.
 #
-# Within NEAR (3 %) of the typical the word is "near"; otherwise "below" or "above". A lens with no
-# earlier day says "first capture". Every cell has the same keys, so the Spine can show any lens.
+# Within NEAR (3 %) of the typical the word is "near"; otherwise "below" or "above". The date, month
+# and any lenses with fewer than EARLY_DAYS earlier capture days, none included, say "early" (session
+# fares-verdict); the lowest lens with no earlier day says "first capture". Each cell carries `days`, the earlier capture
+# days it compared with. Every cell has the same keys, so the Spine can show any lens.
 
 NEAR = 0.03
 LENSES = ("date", "month", "any", "lowest")
+EARLY_DAYS = 7  # below this many earlier capture days a lens says "early" (the lowest lens never does)
 
 
 def lens_word(price, typical):
@@ -355,9 +467,11 @@ def lens_word(price, typical):
     return "below" if diff < 0 else "above"
 
 
-def lens_cell(word, price, typical=None, depart=None, basis=None):
+def lens_cell(word, price, typical=None, depart=None, basis=None, days=None):
+    """`days`: how many earlier capture days the lens compared with (None for "first capture")."""
     return {"word": word, "price": price, "typical": typical,
-            "diff": None if typical is None else price - typical, "depart": depart, "basis": basis}
+            "diff": None if typical is None else price - typical, "depart": depart, "basis": basis,
+            "days": days}
 
 
 def week_of(iso):
@@ -400,7 +514,7 @@ def grouped_lens(today_lows, past, key, fallback_key=None):
         if not lows:
             continue
         typical = int(statistics.median(lows))
-        cell = lens_cell(lens_word(p, typical), p, typical, d, basis)
+        cell = lens_cell(lens_word(p, typical), p, typical, d, basis, len(lows))
         if best is None or p / typical < best["price"] / best["typical"]:
             best = cell
     return best
@@ -437,15 +551,23 @@ def route_lenses(conn, rid, full, scan):
         kind = "nonstop" if best["stops"] == 0 else "one-stop"
         s = standing(best["price"], history(conn, rid, cabin, kind, best["carrier_codes"], day))
         out["any"][cabin] = (lens_cell(lens_word(best["price"], s["typical"]), best["price"], s["typical"],
-                                       best["depart_date"], "any") if s else first)
+                                       best["depart_date"], "any", s["days"]) if s else first)
 
         lows = [v for dates in past.values() for v in dates.values()]
         if lows:
             lowest = min(lows)
             word = "below" if best["price"] < lowest else lens_word(best["price"], lowest)
-            out["lowest"][cabin] = lens_cell(word, best["price"], lowest, best["depart_date"], "lowest")
+            out["lowest"][cabin] = lens_cell(word, best["price"], lowest, best["depart_date"], "lowest", len(past))
         else:
             out["lowest"][cabin] = first
+        # Too few earlier days to say (session fares-verdict), none at all included: "early" with
+        # days 0 and no typical. The lowest-seen lens is exempt and keeps "first capture".
+        for lens in ("date", "month", "any"):
+            cell = out[lens][cabin]
+            if cell is first:
+                out[lens][cabin] = dict(cell, word="early", days=0)
+            elif cell["days"] < EARLY_DAYS:
+                out[lens][cabin] = dict(cell, word="early")
     return out
 
 
@@ -456,7 +578,8 @@ def spine_body(conn, page_html, rendered_at):
     if full is None:
         return None
     return {"rendered_at": rendered_at, "sweep": full["id"], "html": page_html,
-            "summary": [dict(route_summary(conn, p["id"], full, scan), lenses=route_lenses(conn, p["id"], full, scan))
+            "summary": [dict(route_summary(conn, p["id"], full, scan), lenses=route_lenses(conn, p["id"], full, scan),
+                             verdict=route_verdict(conn, p, full, scan))
                         for p in config.load_profiles()["routes"]]}
 
 

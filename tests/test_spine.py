@@ -74,6 +74,7 @@ class Base(unittest.TestCase):
         os.environ.pop("FARES_DATA", None)
         os.environ.pop("FARES_SPINE_URL", None)
         self.page.PUSH_TIMEOUT = 20
+        self.page.EARLY_DAYS = 7
         self.tmp.cleanup()
 
     def day(self, bump=0, when=None, only=None):
@@ -128,11 +129,11 @@ class SummaryTest(Base):
         self.assertEqual(b["rendered_at"], "2026-11-03T10:00:00Z")
         self.assertEqual([s["route"] for s in b["summary"]], ROUTES)
         for s in b["summary"]:
-            self.assertEqual(sorted(s), ["against_typical", "cheapest", "days", "last_run", "lenses", "route", "sweeps"])
+            self.assertEqual(sorted(s), ["against_typical", "cheapest", "days", "last_run", "lenses", "route", "sweeps", "verdict"])
             self.assertEqual(sorted(s["lenses"]), ["any", "date", "lowest", "month"])
-            for lens in s["lenses"].values():
+            for name, lens in s["lenses"].items():
                 for cabin in ("business", "first"):
-                    self.assertEqual(lens[cabin]["word"], "first capture")
+                    self.assertEqual(lens[cabin]["word"], "first capture" if name == "lowest" else "early")
                     self.assertEqual(lens[cabin]["price"], s["cheapest"][cabin])
             for cabin in ("business", "first"):
                 self.assertEqual(s["cheapest"][cabin], min(self.shown_prices(b["html"], s["route"], cabin)))
@@ -153,6 +154,7 @@ class SummaryTest(Base):
             # The page says the same of that same price.
             price = f"<b>${s['cheapest']['business']:,}</b>"
             sec = b["html"][b["html"].index(f"<section id={s['route']}>"):]
+            sec = sec[sec.index("<p class=rules>"):]  # the fare lines, after the verdict lines
             line = sec[sec.index(price):]
             self.assertIn("below the typical", line[:line.index("</li>")])
 
@@ -340,7 +342,12 @@ if __name__ == "__main__":
 
 
 class LensTest(Base):
-    """The four comparison lenses sent with each route (session fares-lenses)."""
+    """The four comparison lenses sent with each route (session fares-lenses). These read the
+    words on one earlier day, so "early" (session fares-verdict, tests/test_verdict.py) is off."""
+
+    def setUp(self):
+        super().setUp()
+        self.page.EARLY_DAYS = 0
 
     def two_days(self, bump):
         self.day(when="2026-11-01T10:00:00Z")

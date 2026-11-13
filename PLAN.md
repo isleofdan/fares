@@ -4,12 +4,41 @@
 
 fares-three (3 Nov 2026): bin/page also sends the page and a summary per route to the Spine's private listener, shown at /fares (see its close-out note). fares-two (3 Nov 2026): horizon fitted to 294 days, history line on the page, keyed sources recorded (see its close-out note). Step 7.1 (skeleton) done. Step 7.2 done: Google Flights chosen as the fare source (see "Fare sources tried"). Step 7.3 done: the capture runs; first real sweeps recorded under "First capture". Step 7.4 done: daily loop written, not installed (see "Daily run"). Step 7.5 done: the page and its screenshot (see "The page"). Step 7.6 done: first learning note in LEARNING.md.
 
+## Open issues
+
+### OPEN ISSUE — the daily search prices Monday departures and 7-night trips only (refiled unchanged so session fares-verdict can read it; first filed 11 Nov 2026 by Personal Shipyard (classic))
+
+Dan, 11 Nov 2026: "make sure the Monday only issue gets preserved to be addressed."
+
+What is checked (isleofdan/fares main at bc541b9, fares/capture.py and PLAN.md close-out "fares-lenses", read 11 Nov 2026): the daily grid departs only on Mondays (2 Nov 2026 plus multiples of 14 days) and every trip is 7 nights. A cheaper fare leaving on another weekday, or for a different length of stay, never appears in the daily history, the comparisons or the deal notes. The only other-weekday evidence is the week scan: seven departures in a row, business, about four weeks out.
+
+Not yet known: whether the weekday or the length of stay moves premium fares on these four routes enough to matter.
+
+To be addressed, in this order:
+1. Measure. Session fares-learn-two's learning note already asks which departure weekdays were cheapest; its report should say, per route, how far the cheapest other-weekday business fare in the week scans sits from that week's Monday fare.
+2. Decide from that number. Options if it matters: rotate the weekday of the fixed dates, add a second fixed weekday, or widen the week scan; each costs searches, and the weekly grid drew bot checks on 2 Nov (PLAN.md, fares-one close-out).
+3. Until decided, any verdict or deal note on the page says it covers Monday departures and 7-night trips.
+
+This issue stays open until a note on this card records the decision. The brief "START HERE — fares-verdict" (event 2574, brief check PASS, job 20261111-142632-245c09) writes it into PLAN.md under "Open issues".
+
+Also part of this issue (Dan, 11 Nov 2026, session fares-verdict): today's cheapest fare can come from the week scan and depart on another weekday, while the verdict's scope still names the grid ("Monday departures, 7-night trips"); the scope stays built from the grid code, and the verdict shows the fare's real departure date beside it.
+
 ## Decisions
 
 - Persistent place for the store, the page, the logs and the loop log: `/data/home/dan/fares-data/` (outside the repository; per FACTS.md anything that must survive a deploy lives under `/data/home/dan`).
 - Python standard library and SQLite by preference. Any third-party package is declared in the repository and installed into a virtualenv in the clone or under `/data/home/dan/fares-data`, never system-wide.
 - No keys, accounts or signed-in browsers this session.
 - Route rules live in one data file, `routes.json`.
+
+### Decision: the good-price line (session fares-verdict, 11 Nov 2026)
+
+Each route and cabin has a good-price line: a fare at or under it is a deal. The line comes from the first of these that exists (`good_price()` in `fares/page.py`):
+1. **Dan's own number** (`good_price.<cabin>.dan` in `routes.json`; null until he gives one). It wins over everything.
+2. **Our own prices**, once the route and cabin have 60 or more complete capture days of the same kind of trip (that nonstop carrier, or one-stop): the lowest tenth (10th percentile, nearest rank) of the daily cheapest prices.
+3. **Reported sales** (`good_price.<cabin>.amount` and `sources`): the median of reported round-trip sale prices, rounded to the nearest $50, only when two or more independent publishers report one; else no amount. Yen are converted to US dollars at the day's rate. JAL and ANA sale fares include fuel surcharge but exclude taxes and fees. The Houston and Detroit lines come from JAL and ANA sales to Dallas and Chicago, because no Houston or Detroit business sale was found.
+4. **None**: the verdict says "no good-price line yet".
+
+The verdict, sent to the Spine with each route's summary and shown at the top of each route on the page, sets today's cheapest nonstop or one-stop trip against that line: `deal`, `not a deal` or `no line yet`, with the gap, the basis in words, and the scope of the daily search ("Monday departures, 7-night trips", built from `GRID_EPOCH` and `NIGHTS` in `fares/capture.py`; see "Open issues").
 
 ## Fare sources tried
 
@@ -147,3 +176,22 @@ Screenshot: `docs/fares-page.png`, Playwright 1.56.1's headless Chromium, full p
 - **Lenses.** `bin/page` sends `lenses` with each route's summary: `date`, `month`, `any`, `lowest`, each `{business, first}` of `{word, price, typical, diff, depart, basis}` (see `route_lenses` in `fares/page.py` for the definitions). Words: `below`, `near` (within 3 %), `above`, `first capture`. `against_typical` is unchanged, so an older Spine still accepts the body only once it knows `lenses` (deploy the Spine first).
 - **Same-date history** builds from this change's first daily run on the machine; until then the date lens uses the same Monday-to-Sunday week.
 - Tests: 41 of 42 pass here (the IPv6 loopback test cannot run in a cloud container).
+
+### fares-verdict (11 Nov 2026 UTC, OpenRig team on Dan's machine, job 2 of 2 from Dan's session fares-verdict)
+
+- **What changed.** `routes.json` carries `good_price` per route and cabin (amounts and sources copied from the session's research file). `fares/page.py`: `good_price()`, `route_verdict()` and `scope_text()`; `spine_body` sends `verdict` with each route; each page section opens with the business and first verdict lines and, when a researched line is in use, ends with its sources as links. Lens cells carry `days` (earlier capture days compared with), and the date, month and any lenses say `early` below 7 earlier days (`EARLY_DAYS`), none included: on the first capture day they say `early` with `days` 0 and no typical (result check on fares#6). The lowest lens is exempt and says "first capture" with `days` null. Job 1 (isleofdan/spine, branch `claude/fares-verdict`) accepts and draws both.
+- Tests: 68 pass (42 before; 26 new in `tests/test_verdict.py`). dev-check's first round on 08000dd found the first-day reading ("nothing here can be called a deal yet") contradicting a deal from reported sales; the reading now speaks only of the missing comparison, and the glossary names the verdict.
+
+- **Close-out by the supervising session (fares-verdict, restarted 13 Nov 2026 UTC after the first supervising session stopped at a permission prompt).** Re-ran both repositories' tests and the end to end on a fresh read-only copy of the live store (sweep 31). The end to end found one more defect on the Spine side: a "new lowest ever" note was filed again each time the same page was sent again. The deal note already fired once. The builder fixed it on the Spine branch (`622c580`) and the checker reviewed it (see the field report, `docs/reports/fares-verdict-report.md`).
+- **The good-price table (all sources read 11 Nov 2026; yen at 158.555 per US dollar that day, from open.er-api.com):**
+
+  | Route | Business line | Basis | First line |
+  |---|---|---|---|
+  | Houston | $3,900 | 5 JAL sales Tokyo–Dallas, Nov 2024 to Jun 2026 (Texas fallback; no Houston business sale found) | none (no sources) |
+  | Detroit | $3,550 | 4 JAL sales and 1 ANA sale Tokyo–Chicago, Jun 2025 to Oct 2026 (Midwest fallback) | none |
+  | Tel Aviv | none | 2 Etihad sales ($3,455 and $4,544), both from one publisher (traicy.com), so they are not independent | none |
+  | Barcelona | $2,450 | 1 China Eastern deal (premium-flights.com) + 4 Etihad sales (traicy.com), Sep 2025 to Nov 2026 | none |
+
+  Every source, with its link, is in `routes.json` under `good_price` and in the page's "Where the good-price line comes from" lists.
+- **Merging, in this order.** 1) The Spine pull request first, then the Spine's deploy workflow, which must succeed. The Spine accepts bodies without `verdict`, so the machine's current fares code still sends without error. 2) Then the fares pull request. If fares went first, the deployed Spine would reject the new body with a 400 for the unknown field `verdict`. That error is one line in `loop.log` and the loop carries on, but the page stays stale.
+- **Bringing the machine's running copy up to date (after both merges and the Spine deploy).** As on 11 Nov (card note "Machine updated by a Remote Control session", fares-lenses): a session on the machine runs `git -C /data/home/dan/fares pull --ff-only origin main` (no new packages: standard library only), then `/data/home/dan/fares/bin/page` once. It should print `sent page to http://spine-dan.internal:8080/internal/fares/page: sweep N, 4 routes`. Then it checks https://spine-dan.fly.dev/fares for the verdict lines. `bin/daily-loop` starts each run's `bin/capture` and `bin/page` as new processes, so the loop picks up the new code with no restart. A machine reboot does the same pull by itself (`start.sh`, fast-forward only).
