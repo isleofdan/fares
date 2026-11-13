@@ -175,5 +175,5 @@ None. The merge is the thread's, on Dan's typed yes there.
 
 fares-verdict is done: each route now has a good-price line and one plain verdict, and the card gets a note only for a real deal or a new low.
 Today Houston business at $3,731 is a deal (its line is $3,900); Detroit and Barcelona business are not; the other five have no line yet.
-Tests: fares 42 → 68, Spine fares checks 96 → 166. The team's checker found defects in two early rounds and passed every corrected candidate. The result checks raised five more points, all now fixed, and their verdict on this final report is on the card fares.
+Tests: fares 42 → 68, Spine fares checks 96 → 166. The team's checker found defects in two early rounds and passed every corrected candidate. The result checks raised findings in two rounds, all now fixed; their verdict on this final report is on the card fares.
 NOT MERGED: two pull requests wait for your yes, the Spine first: https://github.com/isleofdan/spine/pull/44, then https://github.com/isleofdan/fares/pull/6.
