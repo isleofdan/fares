@@ -167,13 +167,23 @@ class EarlyAndDaysTest(VerdictBase):
     def lenses(self, rid="tel-aviv"):
         return next(s for s in self.body()["summary"] if s["route"] == rid)["lenses"]
 
-    def test_first_capture_has_null_days(self):
+    def test_day_zero_is_early_with_no_typical(self):
+        # Result check on fares#6: with no earlier day the date, month and any lenses say "early", days 0.
         self.day()
         for s in self.body()["summary"]:
-            for lens in s["lenses"].values():
-                for cell in lens.values():
+            for lens in ("date", "month", "any"):
+                for cabin, cell in s["lenses"][lens].items():
                     if cell:
-                        self.assertEqual((cell["word"], cell["days"]), ("first capture", None))
+                        self.assertEqual({k: cell[k] for k in ("word", "days", "typical", "diff", "basis")},
+                                         {"word": "early", "days": 0, "typical": None, "diff": None, "basis": None},
+                                         (s["route"], lens, cabin))
+
+    def test_day_zero_lowest_says_first_capture(self):
+        self.day()
+        cells = [c for s in self.body()["summary"] for c in s["lenses"]["lowest"].values() if c]
+        self.assertTrue(cells)
+        for cell in cells:
+            self.assertEqual((cell["word"], cell["days"], cell["typical"]), ("first capture", None, None))
 
     def test_early_below_seven_days_lowest_exempt(self):
         self.history(6, bump=500)  # today is cheaper: lowest says below, the others early

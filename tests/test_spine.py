@@ -131,9 +131,9 @@ class SummaryTest(Base):
         for s in b["summary"]:
             self.assertEqual(sorted(s), ["against_typical", "cheapest", "days", "last_run", "lenses", "route", "sweeps", "verdict"])
             self.assertEqual(sorted(s["lenses"]), ["any", "date", "lowest", "month"])
-            for lens in s["lenses"].values():
+            for name, lens in s["lenses"].items():
                 for cabin in ("business", "first"):
-                    self.assertEqual(lens[cabin]["word"], "first capture")
+                    self.assertEqual(lens[cabin]["word"], "first capture" if name == "lowest" else "early")
                     self.assertEqual(lens[cabin]["price"], s["cheapest"][cabin])
             for cabin in ("business", "first"):
                 self.assertEqual(s["cheapest"][cabin], min(self.shown_prices(b["html"], s["route"], cabin)))

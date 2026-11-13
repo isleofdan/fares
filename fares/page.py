@@ -450,9 +450,9 @@ def route_summary(conn, rid, full, scan):
 #           comparison, of the same kind of trip).
 #   lowest  Today's cheapest against the lowest price ever seen for the route and cabin.
 #
-# Within NEAR (3 %) of the typical the word is "near"; otherwise "below" or "above". A lens with no
-# earlier day says "first capture"; the date, month and any lenses with fewer than EARLY_DAYS earlier
-# capture days say "early" (session fares-verdict). Each cell carries `days`, the earlier capture
+# Within NEAR (3 %) of the typical the word is "near"; otherwise "below" or "above". The date, month
+# and any lenses with fewer than EARLY_DAYS earlier capture days, none included, say "early" (session
+# fares-verdict); the lowest lens with no earlier day says "first capture". Each cell carries `days`, the earlier capture
 # days it compared with. Every cell has the same keys, so the Spine can show any lens.
 
 NEAR = 0.03
@@ -560,10 +560,13 @@ def route_lenses(conn, rid, full, scan):
             out["lowest"][cabin] = lens_cell(word, best["price"], lowest, best["depart_date"], "lowest", len(past))
         else:
             out["lowest"][cabin] = first
-        # Too few earlier days to say (session fares-verdict); the lowest-seen lens is exempt.
+        # Too few earlier days to say (session fares-verdict), none at all included: "early" with
+        # days 0 and no typical. The lowest-seen lens is exempt and keeps "first capture".
         for lens in ("date", "month", "any"):
             cell = out[lens][cabin]
-            if cell is not first and cell["days"] < EARLY_DAYS:
+            if cell is first:
+                out[lens][cabin] = dict(cell, word="early", days=0)
+            elif cell["days"] < EARLY_DAYS:
                 out[lens][cabin] = dict(cell, word="early")
     return out
 
