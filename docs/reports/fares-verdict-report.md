@@ -145,7 +145,7 @@ States shot: populated at desktop and phone, and after the frequent action (tab 
 ## Deliberate divergences from the brief
 
 - **No merge-session brief, and no launch block.** The relay that restarted this session (Dan, via the thread) says: "Leave out any merge-session launch block for Dan; the thread that started you merges after Dan's typed yes there." So no "START HERE — fares-verdict-merge" note was filed or brief-checked. The card's `next` names the thread as the one that merges.
-- **`next` wording.** For the same reason, `next` reads: "The thread that started fares-verdict merges the two pull requests on Dan's typed yes: the Spine first, then its deploy, then fares; then a machine session updates ~/fares as fares PLAN.md's fares-verdict close-out says."
+- **`next` wording.** For the same reason, `next` reads: "The thread that started fares-verdict merges the two pull requests on Dan's typed yes: the Spine first, then its deploy, then fares; then it starts a machine session that updates ~/fares as fares PLAN.md's fares-verdict close-out says, and a Spine session that adds the private-listener card-note route scoped in the fares-verdict field report."
 - **The end-to-end sweep.** The end to end used a fresh copy of the store (sweep 31, 13 Nov), not the first session's copy (sweep 26), so the values are today's.
 
 ## What the merge must do, in order
