@@ -169,6 +169,7 @@ None. The merge is the thread's, on Dan's typed yes there.
 
 - **A restored team keeps its context.** `rig up 'fares-verdict-mixed' --existing` brought both seats back in the same clones within a minute, with their conversations intact. The builder took the next job at once, so restoring was cheaper than starting fresh.
 - **A wait matched an old file.** My first wait for the checker's verdict on b482852 counted folders and read the newest `review.txt`, so it fired on the old 622c580 PASS. Waiting on the exact candidate's own file (`qa-b482852/review.txt`) fixed it.
+- **The Spine connector was down for about an hour (13:09 to 14:17 UTC).** Every connector call failed with "upstream connect error … connection timeout", and once with "mcp_integration_state_unavailable", while every route on spine-dan.fly.dev answered from the machine in under 0.1 s. The break was in claude.ai's connector service, not the Spine. It held up the report filing and the last result checks by an hour. A write that timed out did not land (checked on the card before refiling). Lasting fix (recommended to Dan): a private-listener route on the Spine for filing a card note from the machine, so card writes stop depending on that one connector.
 - **A placeholder note went to the card (event 2600).** I filed the card fields with a placeholder note instead of the report, and corrected it with the next note (event 2601). A card write's note is the report text itself, never a pointer to be filled in later.
 
 ## Closing message to Dan
