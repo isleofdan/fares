@@ -155,7 +155,7 @@ States shot: populated at desktop and phone, and after the frequent action (tab 
 
 1. Merge spine#44 and run the Spine's deploy workflow, which must succeed. The deployed Spine accepts bodies with and without `verdict`.
 2. Merge fares#6. If it went first, the live Spine would refuse the new `verdict` field and the `early` word with a 400 naming them. The loop logs that line and goes on, but /fares stays stale.
-3. Update the machine's running copy, as fares PLAN.md's fares-verdict close-out says. `git -C /data/home/dan/fares pull --ff-only origin main` brings no new packages. Then run `/data/home/dan/fares/bin/page` once. It should print `sent page to http://spine-dan.internal:8080/internal/fares/page: sweep N, 4 routes`. Then check https://spine-dan.fly.dev/fares. The loop starts `bin/capture` and `bin/page` as new processes each run, so no restart is needed, and a reboot pulls by itself (`start.sh`). The thread decides who runs this: it is one command on the machine, so a machine session does it, not Dan.
+3. Update the machine's running copy, as fares PLAN.md's fares-verdict close-out says. `git -C /data/home/dan/fares pull --ff-only origin main` brings no new packages. Then run `/data/home/dan/fares/bin/page` once. It should print `sent page to http://spine-dan.internal:8080/internal/fares/page: sweep N, 4 routes`. Then check https://spine-dan.fly.dev/fares. The loop starts `bin/capture` and `bin/page` as new processes each run, so no restart is needed, and a reboot pulls by itself (`start.sh`). Who does it: the thread that merges starts a machine session right after the fares merge, and that session runs these three steps and reports the line `bin/page` printed. Dan does nothing here.
 
 ## Asks
 
