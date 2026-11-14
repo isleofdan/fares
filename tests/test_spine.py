@@ -124,7 +124,7 @@ class SummaryTest(Base):
     def test_first_day(self):
         self.day()
         b = self.body()
-        self.assertEqual(sorted(b), ["html", "rendered_at", "summary", "sweep"])
+        self.assertEqual(sorted(b), ["houston", "html", "rendered_at", "summary", "sweep"])
         self.assertEqual(b["sweep"], 1)
         self.assertEqual(b["rendered_at"], "2026-11-03T10:00:00Z")
         self.assertEqual([s["route"] for s in b["summary"]], ROUTES)
@@ -215,7 +215,7 @@ class PushTest(Base):
         self.assertEqual(code, 0)
         self.assertEqual(len(stub.bodies), 1)
         sent = json.loads(stub.bodies[0])
-        self.assertEqual(sorted(sent), ["html", "rendered_at", "summary", "sweep"])
+        self.assertEqual(sorted(sent), ["houston", "html", "rendered_at", "summary", "sweep"])
         self.assertEqual(sent["html"], self.page_text())
         self.assertEqual([s["route"] for s in sent["summary"]], ROUTES)
         self.assertRegex(sent["rendered_at"], r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$")

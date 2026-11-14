@@ -8,6 +8,7 @@ Run: bin/page   (writes /data/home/dan/fares-data/fares.html, then sends it to t
 
 import argparse
 import html
+import hashlib
 import json
 import sqlite3
 import statistics
@@ -601,9 +602,40 @@ def spine_body(conn, page_html, rendered_at):
     if full is None:
         return None
     return {"rendered_at": rendered_at, "sweep": full["id"], "html": page_html,
+            "houston": houston_candidates(conn, full, scan),
             "summary": [dict(route_summary(conn, p["id"], full, scan), lenses=route_lenses(conn, p["id"], full, scan),
                              verdict=route_verdict(conn, p, full, scan))
                         for p in config.load_profiles()["routes"]]}
+
+
+def houston_candidates(conn, full, scan):
+    """A bounded sample, five distinct outbound products per date pair.
+
+    All are business-search from-prices, not selected returns or quotes. No
+    history or verdict changes. IDs identify observations, so saved evidence
+    is never silently replaced by a later capture's price.
+    """
+    rows = sorted((r for r in today_rows(conn, "houston", full, scan)
+                   if r["cabin"] == "business" and r["stops"] <= 1),
+                  key=lambda r: (r["price"], r["id"]))
+    seen, counts, result = set(), {}, []
+    fields = ("captured_at", "depart_date", "return_date", "carriers", "flight_numbers",
+              "origin_airport", "dest_airport", "segment_cabins", "duration_min", "stops",
+              "price", "currency", "source")
+    for r in rows:
+        dates = (r["depart_date"], r["return_date"])
+        product = dates + (r["flight_numbers"], r["segment_cabins"], r["currency"])
+        if product in seen or counts.get(dates, 0) >= 5:
+            continue
+        seen.add(product)
+        counts[dates] = counts.get(dates, 0) + 1
+        item = {k: r[k] for k in fields}
+        item["segment_cabins"] = item["segment_cabins"] or ""
+        item["id"] = hashlib.sha256(json.dumps(item, sort_keys=True).encode()).hexdigest()[:24]
+        result.append(item)
+        if len(result) == 200:
+            break
+    return result
 
 
 def one_line(text) -> str:
