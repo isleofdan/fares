@@ -173,6 +173,7 @@ This list was researched on 14 Nov 2026 for business and first class round trips
   - Its Tokyo to Houston page lists NRT–IAH nonstops (ZIPAIR) and HND–IAH nonstops (United), with economy prices only. https://www.trip.com/flights/tokyo-to-houston/airfares-tyo-hou/
   - Business prices for the four cities: not found.
 - **How to ask:** online booking and customer support. A quote service: not found.
+  - Sells trips departing Tokyo: yes, its route pages are Tokyo departures (the Tokyo–Houston page above).
 - **Why they look legitimate:**
   - Large Singapore-registered online agency.
   - IATA number and Japanese registration: not found on the page read.
