@@ -2,6 +2,8 @@
 
 ## Current state
 
+fares-brokers (14 Nov 2026): `BROKERS.md` lists the agencies worth asking for discounted business and first class from Tokyo when the Fares page shows nothing good.
+
 fares-three (3 Nov 2026): bin/page also sends the page and a summary per route to the Spine's private listener, shown at /fares (see its close-out note). fares-two (3 Nov 2026): horizon fitted to 294 days, history line on the page, keyed sources recorded (see its close-out note). Step 7.1 (skeleton) done. Step 7.2 done: Google Flights chosen as the fare source (see "Fare sources tried"). Step 7.3 done: the capture runs; first real sweeps recorded under "First capture". Step 7.4 done: daily loop written, not installed (see "Daily run"). Step 7.5 done: the page and its screenshot (see "The page"). Step 7.6 done: first learning note in LEARNING.md.
 
 ## Open issues
