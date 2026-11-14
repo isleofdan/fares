@@ -17,7 +17,7 @@ bin/capture --horizon 300  # the older, longer grid (default 294 days, measured;
 bin/page                 # writes /data/home/dan/fares-data/fares.html, then sends it to the Spine (/fares)
 bin/page --no-push       # writes the page only, sends nothing
 bin/page --spine <url>   # sends to another address (default: FARES_SPINE_URL, else http://spine-dan.internal:8080/internal/fares/page)
-bin/daily-loop           # all three, then again every 24 hours (not installed anywhere; see PLAN.md)
+bin/daily-loop           # all three, then again every 24 hours (installed on agent-machine-dan per deployment reports; see PLAN.md for verification)
 .venv/bin/python -m unittest discover -s tests -t .   # tests
 ```
 
