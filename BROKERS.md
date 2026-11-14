@@ -96,7 +96,7 @@ This list was researched on 14 Nov 2026 for business and first class round trips
 - **Why they look legitimate:**
   - QUALITA: 観光庁長官登録旅行業 第1896号. https://www.qualita-travel.com/about/company.html
   - Parent H.I.S.: 観光庁長官登録旅行業 第724号. https://www.his-j.com/company/yakkan/
-  - Public complaints: not searched for this desk.
+  - Public complaints: none found about QUALITA itself (search "クオリタ HIS 評判 クレーム", 2026-11-14). User reviews of the parent H.I.S. mention curt service and booking mistakes (https://minhyo.jp/his?page=10). No regulator action found.
 - **Ask them when** you want first class priced on any of Houston, Detroit or Barcelona, or a Barcelona trip with a European stopover or hotel added.
 
 ### 4. 株式会社令和トラベル (Reiwa Travel, Inc.), "NEWT Bespoke" flights
@@ -119,7 +119,7 @@ This list was researched on 14 Nov 2026 for business and first class round trips
   - Registration: 観光庁長官登録旅行業 第2123号, valid 令和8年3月19日 to 令和13年3月18日 (19 Mar 2026 to 18 Mar 2031).
   - JATA full member, IATA-accredited.
   - Source: https://newt.net/license
-  - Public complaints: not searched.
+  - Public complaints: none found (search "NEWT 令和トラベル 評判 トラブル 苦情", 2026-11-14). The review site lists only four reviews, with no complaint content (https://minhyo.jp/newt).
 - **Ask them when** you want first class priced, or Barcelona via Dubai or Doha on Emirates or Qatar.
 
 ### 5. 株式会社エアトリ (AirTrip Corp.), formerly Skygate
@@ -155,6 +155,7 @@ This list was researched on 14 Nov 2026 for business and first class round trips
   - Forms: https://www.the-sky.jp/form/contact1/index.php and https://www.the-sky.jp/form/contact2/index.php
   - Email info@the-sky.jp; phone 03-5468-5722.
   - LINE: not found.
+  - Quotes trips departing Tokyo: not stated on the pages read.
 - **Why they look legitimate:**
   - Registration: 東京都知事登録旅行業 第3-5564号.
   - IATA number 96-6-24640.
