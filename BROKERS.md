@@ -7,7 +7,7 @@ This list was researched on 14 Nov 2026 for business and first class round trips
 **What the research found:**
 - **Best first ask:** a small Tokyo shop that sells discounted business tickets from Tokyo and quotes to order (Inter Resort, entry 1). It is the only agency with a current published fare that names one of the four cities: Detroit, on Air Canada.
 - **No published prices for the other three cities:** no page showed a business or first fare from Tokyo to Houston, Tel Aviv or Barcelona. Those need a quote.
-- **No suitable broker outside Japan:** every US premium-cabin consolidator checked sells tickets departing the US (or Canada) only. The online agencies that do sell Tokyo departures publish no agency-only fares, so they are price checks, not brokers (see "Price checks, not brokers").
+- **No suitable broker outside Japan was confirmed among those checked:** every US premium-cabin consolidator checked sells tickets departing the US (or Canada) only, and one (Skylux) could not be checked. The online agencies that do sell Tokyo departures publish no agency-only fares, so they are price checks, not brokers (see "Price checks, not brokers").
 
 ## The list, best first
 
@@ -23,7 +23,7 @@ This list was researched on 14 Nov 2026 for business and first class round trips
 - **Routes, cabins and published prices** (from the special-fare list, https://www.interresort.com/bargain.html):
   - **Detroit, business, Air Canada:** "アトランタ／デトロイト／マイアミ／ミネアポリス／セントルイス他" (Atlanta, Detroit, Miami, Minneapolis, St. Louis and others), "往復454,000円～" (round trip from ¥454,000), shown as ¥227,000 for the outbound half. One-way use is not allowed. Updated 2026-09-11.
   - Whether taxes and fuel surcharges are included: not stated.
-  - **Qatar Airways business, "Europe":** from ¥445,000. No city is named, so it may cover Barcelona; whether that price is round trip: not stated.
+  - **Qatar Airways business, "Europe":** from ¥445,000. No city is named; whether it covers Barcelona: not found. Whether that price is round trip: not stated.
   - **Houston, Tel Aviv:** not on the list.
   - **First class:** the list has an icon for first class, but no first class fare was shown.
 - **Their fees:**
@@ -64,7 +64,7 @@ This list was researched on 14 Nov 2026 for business and first class round trips
   - Phone 050-3664-0070; email air@tokutenryoko.com
   - Hours: weekdays 9–18, weekends and holidays 10–17. They aim to reply within about an hour on weekdays.
   - LINE: not found.
-  - Quotes trips departing Tokyo: yes, by implication: it sells international tickets to customers in Japan.
+  - Quotes trips departing Tokyo: not stated on the page read.
   - Source: https://www.tokutenryoko.com/service/airticket/
 - **Why they look legitimate:**
   - Registration: 観光庁長官登録旅行業 第1869号 (registered with the Japan Tourism Agency).
@@ -150,7 +150,7 @@ This list was researched on 14 Nov 2026 for business and first class round trips
   - Published lists of discounted business fares by airline.
   - The Europe list includes Iberia to Madrid and other Spanish cities, from ¥316,100.
   - **These fares are stale:** they cover travel from April 2021 to March 2022. https://www.the-sky.jp/air/business_eu_ot.html
-- **Routes and cabins:** Barcelona plausibly falls under the Spanish cities on Iberia (business). Other cities: not found.
+- **Routes and cabins:** the Iberia list names Madrid and "other Spanish cities" (business). Barcelona by name, and the other three cities: not found.
 - **How to ask:**
   - Forms: https://www.the-sky.jp/form/contact1/index.php and https://www.the-sky.jp/form/contact2/index.php
   - Email info@the-sky.jp; phone 03-5468-5722.
