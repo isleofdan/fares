@@ -199,4 +199,4 @@ Screenshot: `docs/fares-page.png`, Playwright 1.56.1's headless Chromium, full p
 
 ### fares-tactics (14 Nov 2026 UTC, OpenRig team on Dan's machine, from Dan's session fares-tactics)
 
-- `routes.json` carries `tactics` per route (14 items, copied by program from the session's `tactics-research.json`, all `checked: false`); `fares/page.py` `tactics_block` ends each route section with "Ways to pay less", page only, no new CSS (a page without tactics renders byte for byte as 8a36a38's code renders it); tests in `tests/test_tactics.py`.
+- `routes.json` carries `tactics` per route (14 items, copied by program from the session's `tactics-research.json`, all `checked: false`); `fares/page.py` `tactics_block` ends each route section with "Ways to pay less", page only, no new CSS (a page without tactics renders byte for byte as 8a36a38's code renders it, checked against `tests/fixtures/page-8a36a38-no-tactics.html`, which that code rendered); tests in `tests/test_tactics.py`. The two Houston tactics that quote our captured prices cite `LEARNING.md` for them (result check on fares#8).

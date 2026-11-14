@@ -7,7 +7,11 @@ Nothing leaves the machine: searches are stubs.
 
 import copy
 import json
+import os
 import re
+import subprocess
+import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 from tests.test_spine import Base
@@ -16,15 +20,38 @@ ROUTES = ["houston", "detroit", "tel-aviv", "barcelona"]
 RESEARCH = Path(__file__).resolve().parents[2] / "tactics-research.json"
 HOSTILE = '<script>alert("x")</script> & \'quotes\''
 
+# The page as fares/page.py at 8a36a38 (origin/main before this branch) renders the fixture store
+# that TacticsTest.setUp builds: the stub captures of tests/test_spine.py's Base.day(), with the
+# clock fixed at FIXED_NOW (capture dates and capture times both follow it), and 8a36a38's own
+# routes.json, which has no tactics. To make it again, from the clone's root:
+#   rm -rf /tmp/fares-8a36a38 && mkdir /tmp/fares-8a36a38
+#   git archive 8a36a38 fares routes.json | tar -x -C /tmp/fares-8a36a38
+#   .venv/bin/python -m tests.test_tactics --write-baseline /tmp/fares-8a36a38
+# (result check on fares#8: the no-tactics test compares with the earlier code, not the new one).
+BASELINE = Path(__file__).parent / "fixtures" / "page-8a36a38-no-tactics.html"
+FIXED_NOW = datetime(2026, 11, 3, 10, 0, 0, tzinfo=timezone.utc)
+
+
+class FixedClock(datetime):
+    @classmethod
+    def now(cls, tz=None):
+        return FIXED_NOW if tz else FIXED_NOW.replace(tzinfo=None)
+
 
 class TacticsTest(Base):
     def setUp(self):
         super().setUp()
         self.real_profiles = self.page.config.load_profiles
-        self.day()
+        self.real_clock = self.capture.datetime
+        self.capture.datetime = FixedClock
+        try:
+            self.day(when=FIXED_NOW.strftime("%Y-%m-%dT%H:%M:%SZ"))
+        finally:
+            self.capture.datetime = self.real_clock
 
     def tearDown(self):
         self.page.config.load_profiles = self.real_profiles
+        self.capture.datetime = self.real_clock
         super().tearDown()
 
     def render_with(self, change=None):
@@ -116,6 +143,8 @@ class TacticsTest(Base):
     def test_no_tactics_renders_as_before(self):
         before = self.render_with(self.without_tactics)
         self.assertNotIn("Ways to pay less", before)
+        # byte for byte the page 8a36a38's own code rendered from the same store (BASELINE above)
+        self.assertEqual(before.encode("utf-8"), BASELINE.read_bytes())
 
         def empty(profiles):
             self.without_tactics(profiles)
@@ -140,3 +169,28 @@ class TacticsTest(Base):
         self.assertEqual(bodies[0], bodies[1])
         self.assertNotIn("tactic", json.dumps(bodies[0]).lower())
         self.assertNotIn("pay less", json.dumps(bodies[0]).lower())
+
+
+RENDER_OLD = """
+import sys
+from fares import config, page, store
+sys.stdout.write(page.render(store.connect(config.store_path())))
+"""
+
+
+def write_baseline(old_checkout):
+    """Builds TacticsTest's fixture store, then renders it with the code in `old_checkout` (its own
+    fares/ and routes.json, run in a separate interpreter) and saves the page as BASELINE."""
+    t = TacticsTest("test_no_tactics_renders_as_before")
+    t.setUp()
+    try:
+        out = subprocess.run([sys.executable, "-c", RENDER_OLD], cwd=old_checkout, check=True,
+                             capture_output=True, env={**os.environ, "PYTHONPATH": str(old_checkout)}).stdout
+    finally:
+        t.tearDown()
+    BASELINE.write_bytes(out)
+    print(f"wrote {BASELINE} ({len(out)} bytes) from {old_checkout}")
+
+
+if __name__ == "__main__" and sys.argv[1:2] == ["--write-baseline"]:
+    write_baseline(Path(sys.argv[2]).resolve())
