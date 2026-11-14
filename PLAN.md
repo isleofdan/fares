@@ -2,9 +2,16 @@
 
 ## Current state
 
+Status reconciled 14 Nov 2026: the daily loop is reported installed on agent-machine-dan. The Spine record `fares-page-latest`, read directly during this review, contains sweep 33 rendered at 2026-11-14T00:17:04Z, with 17 complete full sweeps across 13 capture days. This verifies a stored page and accumulated history, not current process health. The older installation statements in the dated close-out notes below are historical.
+
+PR7 (broker research) and PR8 (route tactics) were merged on 14 Nov 2026, at c9e01d16407d548dd8009ebcbe75514e82a1d80d and 4fb971ba311c7bcb44f18a8b239e8f353479d46b respectively. The inspected page predates those merges and has no tactics blocks. Deployment remains unverified until the machine copy fast-forwards main, runs bin/page, and the stored page shows four tactic blocks with 4/3/3/4 items. Do not mark tactics checked against prices merely because they are released.
+
+Next product milestone: a Houston trip desk connecting an observed fare to exact travel dates, selected outbound and return, segment cabins, total cost and restrictions, like-for-like alternatives, broker quotes and notes. Keep observed source prices distinct from verified quotes; no personal price threshold has been chosen. A bounded weekday/stay-length measurement precedes any change to the daily collection rule.
+
+
 fares-brokers (14 Nov 2026): `BROKERS.md` lists the agencies worth asking for discounted business and first class from Tokyo when the Fares page shows nothing good.
 
-fares-three (3 Nov 2026): bin/page also sends the page and a summary per route to the Spine's private listener, shown at /fares (see its close-out note). fares-two (3 Nov 2026): horizon fitted to 294 days, history line on the page, keyed sources recorded (see its close-out note). Step 7.1 (skeleton) done. Step 7.2 done: Google Flights chosen as the fare source (see "Fare sources tried"). Step 7.3 done: the capture runs; first real sweeps recorded under "First capture". Step 7.4 done: daily loop written, not installed (see "Daily run"). Step 7.5 done: the page and its screenshot (see "The page"). Step 7.6 done: first learning note in LEARNING.md.
+fares-three (3 Nov 2026): bin/page also sends the page and a summary per route to the Spine's private listener, shown at /fares (see its close-out note). fares-two (3 Nov 2026): horizon fitted to 294 days, history line on the page, keyed sources recorded (see its close-out note). Step 7.1 (skeleton) done. Step 7.2 done: Google Flights chosen as the fare source (see "Fare sources tried"). Step 7.3 done: the capture runs; first real sweeps recorded under "First capture". Step 7.4: daily loop installed per later deployment reports (see verification note above). Step 7.5 done: the page and its screenshot (see "The page"). Step 7.6 done: first learning note in LEARNING.md.
 
 ## Open issues
 
