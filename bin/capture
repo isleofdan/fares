@@ -1,4 +1,6 @@
 #!/bin/sh
 # One full capture sweep into /data/home/dan/fares-data/fares.sqlite (see fares/capture.py).
 cd "$(dirname "$0")/.." || exit 1
-exec .venv/bin/python -m fares.capture "$@"
+DATA="${FARES_DATA:-/data/home/dan/fares-data}"
+mkdir -p "$DATA"
+exec flock -n "$DATA/capture.lock" .venv/bin/python -m fares.capture "$@"

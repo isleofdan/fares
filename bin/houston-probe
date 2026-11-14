@@ -1,0 +1,5 @@
+#!/bin/sh
+cd "$(dirname "$0")/.." || exit 1
+DATA="${FARES_DATA:-/data/home/dan/fares-data}"
+mkdir -p "$DATA"
+exec flock -n "$DATA/capture.lock" .venv/bin/python -m fares.houston_probe "$@"

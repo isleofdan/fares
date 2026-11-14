@@ -124,7 +124,7 @@ class SummaryTest(Base):
     def test_first_day(self):
         self.day()
         b = self.body()
-        self.assertEqual(sorted(b), ["html", "rendered_at", "summary", "sweep"])
+        self.assertEqual(sorted(b), ["houston", "html", "rendered_at", "summary", "sweep"])
         self.assertEqual(b["sweep"], 1)
         self.assertEqual(b["rendered_at"], "2026-11-03T10:00:00Z")
         self.assertEqual([s["route"] for s in b["summary"]], ROUTES)
