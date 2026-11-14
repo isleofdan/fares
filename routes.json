@@ -18,7 +18,13 @@
           {"url": "https://may-money.com/flight-jal-timesale-20260611/", "read": "2026-11-11", "price": 4364, "note": "JAL sale 11-21 Jun 2026, Tokyo-Dallas business JPY 692,000 (Texas fallback)"}
         ]},
         "first": {"amount": null, "dan": null, "sources": []}
-      }
+      },
+      "tactics": [
+        {"move": "Fly ZIPAIR ZG16 from Narita in its lie-flat \"ZIP Full-Flat\" seat.", "why": "ZIPAIR is Japan Airlines' low-cost airline; its 18 lie-flat seats launched at ¥188,500 one way, well under full-service business, and it has been the cheapest nonstop business in our captures ($3,711–3,912 round trip against $5,643–5,791 on United or ANA).", "source": "https://www.aviationwire.jp/archives/319331", "checked": false},
+        {"move": "Plan around ZIPAIR's flying days.", "why": "It flies only a few days a week (three a week through 2 Jan 2027, one to three a week in January 2027), and on other days the cheapest nonstop is United or ANA at about $1,900 more.", "source": "https://www.aviationwire.jp/archives/351339", "checked": false},
+        {"move": "Price ZIPAIR one way and fly another airline the other way.", "why": "ZIPAIR sells each direction as its own one-way fare, so its cheap leg can be paired with a different return.", "source": "https://www.aviationwire.jp/archives/319331", "checked": false},
+        {"move": "On United UA6, buy Premium Plus and upgrade to Polaris with PlusPoints (not on a Basic Polaris or Premium Plus fare).", "why": "A paid Premium Plus ticket upgrades to Polaris for 30 PlusPoints, for United elite members; United's new 787-9 on this route has 35 Premium Plus seats.", "source": "https://thepointsguy.com/airline/united-fare-classes/", "checked": false}
+      ]
     },
     {
       "id": "detroit",
@@ -35,7 +41,12 @@
           {"url": "https://www.traicy.com/posts/20261015384933/", "read": "2026-11-11", "price": 3532, "note": "ANA sale 15-21 Oct 2026, Tokyo-Chicago business JPY 560,000 (Midwest fallback)"}
         ]},
         "first": {"amount": null, "dan": null, "sources": []}
-      }
+      },
+      "tactics": [
+        {"move": "Price one-stop business against Delta's Haneda nonstop.", "why": "In our captures the cheapest one-stop business was about $370 less than Delta DL274.", "source": "our data", "checked": false},
+        {"move": "Ask a Tokyo discount agency for Air Canada business.", "why": "Inter Resort lists Air Canada business to Detroit from ¥454,000 round trip on its discount-fare list (see BROKERS.md).", "source": "https://www.interresort.com/bargain.html", "checked": false},
+        {"move": "On Delta, buy a lower cabin and upgrade to Delta One with miles through Delta Reservations.", "why": "Delta says Reservations can upgrade a purchased ticket to Delta One with miles; which fares on the Tokyo route qualify is not stated.", "source": "https://www.delta.com/content/www/en_US/skymiles/program-resources/ways-to-upgrade.html", "checked": false}
+      ]
     },
     {
       "id": "tel-aviv",
@@ -52,7 +63,12 @@
           {"url": "https://www.traicy.com/posts/20260823379881/", "read": "2026-11-11", "price": 4544, "note": "Etihad sale 23-27 Aug 2026, Narita-Tel Aviv business JPY 720,420; same publisher as above, so no line"}
         ]},
         "first": {"amount": null, "dan": null, "sources": []}
-      }
+      },
+      "tactics": [
+        {"move": "Price one-stop business against El Al's Narita nonstop.", "why": "In our captures the cheapest one-stop business ($4,511, Thai Airways with El Al via Bangkok) was $780 less than El Al's nonstop.", "source": "our data", "checked": false},
+        {"move": "Fold Tel Aviv into a Europe trip: a sale business fare to a European city plus a separate ticket on to Tel Aviv.", "why": "In Etihad's August 2026 Japan sale, Narita–Tel Aviv business was ¥720,420 against ¥466,350 to Milan or ¥490,560 to Madrid; the Europe–Tel Aviv leg is not priced here.", "source": "https://www.traicy.com/posts/20260823379881/", "checked": false},
+        {"move": "If flying Etihad, buy in its sales and take the free Abu Dhabi stopover.", "why": "Etihad's Japan sale fares include Narita–Tel Aviv and qualify for its Abu Dhabi stopover programme, with up to 2 free hotel nights depending on the flight.", "source": "https://www.traicy.com/posts/20260823379881/", "checked": false}
+      ]
     },
     {
       "id": "barcelona",
@@ -68,7 +84,13 @@
           {"url": "https://www.traicy.com/posts/20261108387264/", "read": "2026-11-11", "price": 3482, "note": "Etihad sale 8-15 Nov 2026, Narita-Barcelona business JPY 552,160"}
         ]},
         "first": {"amount": null, "dan": null, "sources": []}
-      }
+      },
+      "tactics": [
+        {"move": "Buy Etihad business in its Japan sales.", "why": "Etihad runs Narita business sales every month or two (Barcelona ¥353,090 in June 2026, ¥552,160 in its 8–15 Nov 2026 sale).", "source": "https://www.traicy.com/posts/20261108387264/", "checked": false},
+        {"move": "Price Madrid, Milan or Lisbon against Barcelona and take the train or a short flight on.", "why": "In Etihad's 8–15 Nov 2026 sale Narita business was ¥516,450 to Madrid, ¥470,960 to Milan and ¥473,100 to Lisbon, against ¥552,160 to Barcelona.", "source": "https://www.traicy.com/posts/20261108387264/", "checked": false},
+        {"move": "On Etihad, take the free Abu Dhabi stopover.", "why": "Etihad's Japan sale fares qualify for its Abu Dhabi stopover programme, with up to 2 free hotel nights depending on the flight.", "source": "https://www.traicy.com/posts/20260823379881/", "checked": false},
+        {"move": "On Turkish Airlines via Istanbul, claim the free Stopover hotel.", "why": "Business passengers get free hotel nights in Istanbul on a stop of 20 hours or more, with an extra night for long-haul trips from Japan.", "source": "https://blog.wego.com/turkish-airlines-stopover-program/", "checked": false}
+      ]
     }
   ]
 }
