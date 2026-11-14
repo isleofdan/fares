@@ -13,6 +13,7 @@ import sqlite3
 import statistics
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import date, datetime, timedelta, timezone
 
@@ -261,6 +262,28 @@ def sources_list(profile, verdict):
     return "<details class=sources><summary>Where the good-price line comes from</summary><ul>" + "".join(items) + "</ul></details>"
 
 
+# Ways to pay less (session fares-tactics): routes.json's `tactics` per route, each {move, why, source,
+# checked}, read 2026-11-14 and copied from tactics-research.json. `source` is a URL, shown as a link
+# named by its host, or "our data" (LEARNING.md). Page only: the Spine shows this page as it is.
+# No new CSS, so a page whose routes carry no tactics is byte for byte as before.
+def tactics_block(profile):
+    """The route's "Ways to pay less" list; empty when it has no tactics."""
+    items = []
+    for t in profile.get("tactics") or []:
+        url = urllib.parse.urlsplit(t["source"])
+        if t["source"] == "our data":
+            source = "from our own data (LEARNING.md)"
+        elif url.scheme in ("http", "https") and url.hostname:
+            source = f"source: <a href=\"{html.escape(t['source'], quote=True)}\">{html.escape(url.hostname)}</a>"
+        else:  # not a web address: shown, never linked
+            source = f"source: {html.escape(t['source'])}"
+        unchecked = "" if t.get("checked") else " · not yet checked against our prices"
+        items.append(f"<li><b>{html.escape(t['move'])}</b> {html.escape(t['why'])} <span class=meta>{source}{unchecked}</span></li>")
+    if not items:
+        return ""
+    return "<h3>Ways to pay less</h3><ul>" + "".join(items) + "</ul>"
+
+
 def route_section(conn, profile, full, scan):
     rid = profile["id"]
     today = today_rows(conn, rid, full, scan)
@@ -355,7 +378,7 @@ def route_section(conn, profile, full, scan):
         reading.append("This is the first day of history, so no price here can be compared with this route's own"
                        " past yet: after a few weeks each price will be marked against this route's usual level.")
     parts.append("<p class=reading>" + html.escape(" ".join(reading)) + "</p>")
-    parts.append(sources_list(profile, verdict) + "</section>")
+    parts.append(sources_list(profile, verdict) + tactics_block(profile) + "</section>")
     return "\n".join(parts)
 
 

@@ -4,7 +4,7 @@ A personal system that tracks business and first class round-trip airfares from 
 Once a day it quietly records the prices it finds into a price history on Dan's machine, and nothing is ever overwritten.
 A second program turns that history into one plain web page showing today's prices against each route's own past prices.
 The aim is to spot real deals and to learn how airfares behave; `LEARNING.md` collects what the data teaches.
-Each route opens with a verdict for business and first: today's cheapest fare against a good-price line (Dan's own number, else the lowest tenth of 60+ days of our prices, else reported sales), read as a deal, not a deal, or no line yet; the same verdict goes to the Spine (`PLAN.md`, "Decision: the good-price line").
+Each route opens with a verdict for business and first: today's cheapest fare against a good-price line (Dan's own number, else the lowest tenth of 60+ days of our prices, else reported sales), read as a deal, not a deal, or no line yet; the same verdict goes to the Spine (`PLAN.md`, "Decision: the good-price line"). Each route ends with "Ways to pay less": the tactics in `routes.json` (`tactics`, each a move, why it helps, and its source, a link or our own data in `LEARNING.md`), marked "not yet checked against our prices" until `checked` is true; a route without tactics shows nothing, and they are not sent to the Spine as data (it shows the page as it is).
 Route rules live in `routes.json`; current state and decisions are in `PLAN.md`.
 
 ## Run it
