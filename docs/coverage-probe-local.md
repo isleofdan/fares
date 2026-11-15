@@ -25,17 +25,20 @@ any collection-horizon change. This local work does not establish a new Barcelon
 
 Validation uses synthetic source answers and temporary output files. The parent later
 commissioned an independent read-only review and supplied its findings.
-The POSIX flock integration needs its real Linux concurrency check; Windows tests cover
-the lock protocol with a fake fcntl module and fail-closed execution behavior.
+Windows tests cover the lock protocol with a fake fcntl module and fail-closed execution
+behavior. Independent Linux validation of the exact Library version 1 bundle is recorded below.
 
 Validation results on Windows, Python 3.13.9 from Idea Studio's existing embedded runtime:
 
 - 29 targeted tests passed after the publication fix: 19 new probe tests, existing grid and parser tests, and
   the four Houston-probe tests. Network-client creation was replaced with a raising
   guard. Probe searches were synthetic stubs; no live requests were made.
-- Independent full discovery at commit `ab25f715` ran 96 tests, versus 81 on the base,
+- Independent final Windows review at commit `969879451651b4bb82c82a689014dcba55d489a4`
+  confirmed the publication defect fixed with no new blocking issue. Its approved
+  unsandboxed run passed 29 targeted tests; six additional synthetic edge checks passed.
+- Independent revised full discovery ran 100 tests, versus 81 on the base,
   with the same 103 error IDs on both (some tests error in both body and teardown),
-  plus the same WinError 10038 shutdown error. Representative
+  zero assertion failures, plus the same WinError 10038 socket shutdown error. Representative
   failures are existing `strftime("%-d ...")` unsupported by Windows and open SQLite
   handles preventing temporary-directory cleanup. Two representative tests were rerun
   on a separate pristine worktree at `acfedc0`, reproducing both failures (three error
@@ -58,10 +61,30 @@ Four regression tests cover partial initial-write interruption and successful re
 competing initial publication, interruption immediately after linking, and unsupported
 hard links. The first sandboxed Windows test run could not create hard links (11 errors);
 an approved rerun outside that sandbox passed all 29 targeted tests with source-client
-creation disabled. Full discovery was not rerun after these four tests were added; Linux
-full-suite and real lock-concurrency validation remain outstanding.
+creation disabled. Independent revised full discovery is recorded above.
 
-The full Linux suite and a synthetic, two-process shared-lock test remain integration
-checks before live use. Local logs beside this worktree are `probe-tests-fix.txt` and
+Independent Linux verification, reported by the parent, checked exact commit
+`969879451651b4bb82c82a689014dcba55d489a4`, the expected version 1 ZIP hash and
+all 52 manifest hashes. Results: 19/19 probe tests, 9/9 independent lock/checkpoint/
+budget/publication checks, and 99/100 full-suite tests. The sole full-suite mismatch
+is an unchanged baseline CRLF snapshot mismatch. Fault injection confirmed initial
+publication cleanup and successful retry. A two-process same-report race produced one
+winner; the loser made zero searches and did not overwrite the report. Verification
+used Python loopback-only network guards; kernel network namespaces were unavailable.
+These results validate synthetic behavior, not live-source availability or a new horizon.
+
+Local logs beside this worktree are `probe-tests-fix.txt` and
 `baseline-reproduction.txt`. The probe tests are the prevention for unknown/empty
 misclassification and budget overrun; their success does not validate a live source.
+
+Independent review logs remain preserved in
+`C:\Users\Owner\Documents\Codex\2026-11-15\task-6`: `revised-targeted.log`
+and its `.json` summary, `revised-edge-checks.log`, `revised-full.log` and its `.json`
+summary, `fares-baseline.log` and its `.json` summary, plus the initial
+`revised-targeted-sandbox.log` and its `.json` summary (11 hard-link permission errors).
+This consolidated evidence update changes documentation only. Source and test Git blobs
+remain exactly the independently tested `9698794` candidate. The final Library bundle
+contains the complete committed source, the patch series and this report; its manifest
+records per-file hashes. No live probe or integration/release action is authorized by
+these test results. The next decision is whether to integrate the reviewed candidate
+and separately authorize a bounded live probe.
