@@ -21,6 +21,8 @@ as in daily capture; the JSON names that airport. The complete scope must fit th
 A separately authorized live run on the POSIX collector host uses the same command plus
 `--run --output /path/to/new-probe.json`. Its parent directory must already exist; an existing
 file is refused. The shared `capture.lock` excludes daily capture and Houston probes. Do not
+use an output filesystem without hard-link support: initial publication uses an exclusive
+hard link of a complete temporary report and fails closed if that operation is unavailable. Do not
 wrap this command in another `flock` on that lock. Calls are spaced by two seconds, with no
 retries; the first refusal, error or interruption stops the run. Exit codes are 0 for a plan
 or complete run, 1 for a failed source response, 130 for interruption, and 2 for invalid inputs

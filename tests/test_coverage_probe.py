@@ -133,6 +133,48 @@ class CoverageProbeTests(unittest.TestCase):
             with self.assertRaises((ValueError, FileNotFoundError)):
                 self.run_probe(lambda *a: self.fail("search called"))
 
+    def test_interrupted_initial_write_leaves_no_reserved_or_partial_report(self):
+        def partial_dump(obj, stream, **kwargs):
+            stream.write("{")
+            raise KeyboardInterrupt
+        with patch.object(probe.json, "dump", partial_dump), self.assertRaises(KeyboardInterrupt):
+            self.run_probe(lambda *a: self.fail("search called"))
+        self.assertFalse(self.output.exists())
+        self.assertEqual(list(Path(self.tmp.name).iterdir()), [])
+        result = self.run_probe(lambda *a: SimpleNamespace(status=200, itineraries=[]))
+        self.assertTrue(result["complete"])
+
+    def test_initial_publication_race_preserves_other_report(self):
+        real_link = probe.os.link
+        def race(source, destination):
+            self.assertEqual(json.loads(Path(source).read_text())["attempted_queries"], 0)
+            Path(destination).write_text('{"owner": "other probe"}')
+            real_link(source, destination)
+        with patch.object(probe.os, "link", race), self.assertRaises(FileExistsError):
+            self.run_probe(lambda *a: self.fail("search called"))
+        self.assertEqual(json.loads(self.output.read_text()), {"owner": "other probe"})
+        self.assertEqual(list(Path(self.tmp.name).glob("*.tmp")), [])
+
+    def test_interrupt_after_initial_link_leaves_complete_unknown_report(self):
+        real_link = probe.os.link
+        def link_then_interrupt(source, destination):
+            real_link(source, destination)
+            raise KeyboardInterrupt
+        with patch.object(probe.os, "link", link_then_interrupt), self.assertRaises(KeyboardInterrupt):
+            self.run_probe(lambda *a: self.fail("search called"))
+        saved = json.loads(self.output.read_text())
+        self.assertEqual(saved["attempted_queries"], 0)
+        self.assertFalse(saved["complete"])
+        self.assertTrue(all(c["state"] == "not_attempted" for c in saved["cells"]))
+        self.assertEqual(list(Path(self.tmp.name).glob("*.tmp")), [])
+
+    def test_unsupported_exclusive_publication_fails_before_search(self):
+        with patch.object(probe.os, "link", side_effect=OSError("hard links unsupported")), \
+                self.assertRaises(OSError):
+            self.run_probe(lambda *a: self.fail("search called"))
+        self.assertFalse(self.output.exists())
+        self.assertEqual(list(Path(self.tmp.name).iterdir()), [])
+
     def argv(self):
         return ["--route", "barcelona", "--cabin", "business", "--start-day", "280",
                 "--end-day", "293", "--budget", "14"]

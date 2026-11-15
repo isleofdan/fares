@@ -7,6 +7,7 @@ import argparse
 from contextlib import contextmanager
 from datetime import date, datetime, timedelta, timezone
 import json
+import os
 from pathlib import Path
 import time
 
@@ -74,20 +75,28 @@ def execute(report, search, blocked, output, sleep=time.sleep):
     if output.suffix != ".json":
         raise ValueError("probe output must be a new .json file")
     report.update(started_at=now(), stop_reason="running")
-    with output.open("x", encoding="utf-8") as stream:
-        json.dump(report, stream, indent=2)
-
-    def checkpoint():
-        # Own an exclusive temporary file; replace only the report reserved above.
+    def checkpoint(initial=False):
+        # Publish complete bytes only. The first hard link exclusively reserves
+        # the destination without overwriting a concurrent probe's report.
+        # Later checkpoints replace only the report this execution reserved.
         import tempfile
-        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=output.parent,
-                                         prefix=output.name + ".", suffix=".tmp", delete=False) as stream:
-            json.dump(report, stream, indent=2)
-            temporary = Path(stream.name)
+        temporary = None
         try:
-            temporary.replace(output)
+            with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=output.parent,
+                                             prefix=output.name + ".", suffix=".tmp", delete=False) as stream:
+                temporary = Path(stream.name)
+                json.dump(report, stream, indent=2)
+                stream.flush()
+                os.fsync(stream.fileno())
+            if initial:
+                os.link(temporary, output)
+            else:
+                temporary.replace(output)
         finally:
-            temporary.unlink(missing_ok=True)
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
+
+    checkpoint(initial=True)
 
     current = None
     try:
